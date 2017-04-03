@@ -20,22 +20,53 @@ import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Calendar;
 import java.util.TimeZone;
 
+//https://my.vertica.com/docs/8.0.x/HTML/index.htm#Authoring/AdministratorsGuide/BinaryFilesAppendix/CreatingNativeBinaryFormatFiles.htm
+
 public class VerticaColumnInfo {
+  static final long THEIR_EPOCH = 946684800000L;
+  static final long THEIR_EPOCH_MICRO = THEIR_EPOCH * 1000L;
   private static final Logger log = LoggerFactory.getLogger(VerticaColumnInfo.class);
+  private static final byte TRUE = (byte) 0x01;
+  private static final byte FALSE = (byte) 0x00;
+  private static final byte ZERO = FALSE;
   final String name;
   final VerticaType type;
   final int size;
+  final int precision;
+  final int scale;
+  final static TimeZone UTC_TIMEZONE = TimeZone.getTimeZone("UTC");
+  final Calendar calendar;
 
 
-  public VerticaColumnInfo(String name, VerticaType type, int size) {
+  public VerticaColumnInfo(String name, VerticaType type, int size, int precision, int scale) {
+    Preconditions.checkNotNull(name, "name cannot be null.");
     this.name = name;
     this.type = type;
     this.size = size;
+
+    if (VerticaType.NUMERIC == type) {
+      Preconditions.checkState(precision > 0, "precision must be greater than zero.");
+      Preconditions.checkState(scale > -1, "scale must be greater than -1.");
+    }
+
+    this.precision = precision;
+    this.scale = scale;
+    this.calendar = Calendar.getInstance(UTC_TIMEZONE);
+  }
+
+  public VerticaColumnInfo(String name, VerticaType type) {
+    this(name, type, sizeForType(type), -1, -1);
+  }
+
+  public VerticaColumnInfo(String name, VerticaType type, int size) {
+    this(name, type, size, -1, -1);
   }
 
   final static int sizeForType(VerticaType type) {
@@ -79,19 +110,12 @@ public class VerticaColumnInfo {
     return size;
   }
 
-  public VerticaColumnInfo(String name, VerticaType type) {
-    this(name, type, sizeForType(type));
-  }
-
   void writeFloat(ByteBuffer buffer, Object value) {
     log.trace("writeFloat() - value = {}", value);
 
     Number number = (Number) value;
     buffer.putDouble(number.doubleValue());
   }
-
-  private static final byte TRUE = (byte) 0x01;
-  private static final byte FALSE = (byte) 0x00;
 
   void writeBoolean(ByteBuffer buffer, Object value) {
     log.trace("writeBoolean() - value = {}", value);
@@ -112,7 +136,7 @@ public class VerticaColumnInfo {
     );
 
     buffer.put(valueBuffer);
-    int padding = this.size - valueBuffer.remaining();
+    int padding = this.size - valueBuffer.capacity();
     log.trace("writeChar() - padding value by {} byte(s).");
     for (int i = 0; i < padding; i++) {
       buffer.put(FALSE);
@@ -177,10 +201,6 @@ public class VerticaColumnInfo {
     }
   }
 
-  static final long THEIR_EPOCH = 946684800000L;
-  static final long THEIR_EPOCH_MICRO = THEIR_EPOCH * 1000L;
-
-
   void writeDate(ByteBuffer buffer, Object value) {
     log.trace("writeDate() - value = {}", value);
     final long input = toDateStorage(value);
@@ -208,27 +228,54 @@ public class VerticaColumnInfo {
   void writeTime(ByteBuffer buffer, Object value) {
     log.trace("writeTime() - value = {}", value);
     final long input = toDateStorage(value);
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-    calendar.setTimeInMillis(input);
-    calendar.set(2000, 0, 01);
-    long storage = (calendar.getTimeInMillis() * 1000L - THEIR_EPOCH_MICRO);
+    this.calendar.setTimeInMillis(input);
+    this.calendar.set(2000, 0, 01);
+    long storage = (this.calendar.getTimeInMillis() * 1000L - THEIR_EPOCH_MICRO);
     log.trace("writeTime() - storage = {}", storage);
     buffer.putLong(storage);
   }
 
+
   void writeTimeTZ(ByteBuffer buffer, Object value) {
-    log.trace("writeTime() - value = {}", value);
-    final long input = toDateStorage(value);
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-    calendar.setTimeInMillis(input);
-    calendar.set(2000, 0, 01);
-    long storage = (calendar.getTimeInMillis() * 1000L - THEIR_EPOCH_MICRO);
-    log.trace("writeTime() - storage = {}", storage);
-    buffer.putLong(storage);
+
   }
 
   void writeNumeric(ByteBuffer buffer, Object value) {
+    /*
+    This method needs some love. I'm not super familiar with what is going on here but I'm getting a correct value
+    based on the document
+     */
+    log.trace("writeNumeric() - value = {}", value);
+    final BigDecimal decimal = (BigDecimal) value;
 
+    Preconditions.checkState(
+        this.scale == decimal.scale(),
+        "Scale for '%s' is mismatched. Value(%s) does not match definition of %s.",
+        decimal.scale(),
+        this.scale
+    );
+
+    final BigInteger unscaled = decimal.unscaledValue();
+    byte[] unscaledBuffer = unscaled.toByteArray();
+
+    double b = Math.ceil(((38D / 19D) + 1D) * 8D);
+    log.trace("writeNumeric() - bufferSize:{}", b);
+    int bufferSize = (int) Math.ceil(((38D / 19D) + 1D) * 8D);
+    log.trace("writeNumeric() - bufferSize:{}", bufferSize);
+    ByteBuffer byteBuffer = ByteBuffer.allocate(bufferSize).order(ByteOrder.LITTLE_ENDIAN);
+    final int bufferMinusScale = bufferSize - 5;
+    final int paddingNeeded = bufferMinusScale - unscaledBuffer.length;
+    log.trace("writeNumeric() - Padding with {} byte(s).", paddingNeeded);
+    for (int i = 0; i < paddingNeeded; i++) {
+      byteBuffer.put(ZERO);
+    }
+    for (int i = unscaledBuffer.length - 1; i >= 0; i--) {
+      byteBuffer.put(unscaledBuffer[i]);
+    }
+    byteBuffer.put(ZERO);
+    byteBuffer.putInt(scale);
+    byteBuffer.flip();
+    buffer.put(byteBuffer);
   }
 
   private long toDateStorage(Object value) {
@@ -249,6 +296,10 @@ public class VerticaColumnInfo {
     return input;
   }
 
+  void writeInterval(ByteBuffer buffer, Object value) {
+    Number number = (Number) value;
+    buffer.putLong(number.longValue());
+  }
 
   public void encode(ByteBuffer buffer, Object value) {
     Preconditions.checkNotNull(buffer, "buffer cannot be null.");
@@ -294,12 +345,16 @@ public class VerticaColumnInfo {
       case TIME:
         writeTime(buffer, value);
         break;
-//      case TIMETZ:
-//        writeTimeTZ(buffer, value);
-//        break;
-      case NUMERIC:
-
+      case TIMETZ:
+        writeTimeTZ(buffer, value);
         break;
+      case NUMERIC:
+        writeNumeric(buffer, value);
+        break;
+      case INTERVAL:
+        writeInterval(buffer, value);
+        break;
+
     }
   }
 
