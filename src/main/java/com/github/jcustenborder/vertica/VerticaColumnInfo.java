@@ -1,0 +1,401 @@
+/**
+ * Copyright © 2017 Jeremy Custenborder (jcustenborder@gmail.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.github.jcustenborder.vertica;
+
+import com.github.jcustenborder.vertica.binary.Encoder;
+import com.github.jcustenborder.vertica.binary.Encoders;
+import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
+import com.google.common.io.BaseEncoding;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Calendar;
+
+//https://my.vertica.com/docs/8.0.x/HTML/index.htm#Authoring/AdministratorsGuide/BinaryFilesAppendix/CreatingNativeBinaryFormatFiles.htm
+
+/**
+ * Class is used to define a column in a Vertica table.
+ */
+public class VerticaColumnInfo {
+  private static final Logger log = LoggerFactory.getLogger(VerticaColumnInfo.class);
+  final String name;
+  final VerticaColumnType type;
+  final int size;
+  final int precision;
+  final int scale;
+  final Calendar calendar;
+  final Encoders encoders = new Encoders();
+
+  /**
+   * Name of the column.
+   *
+   * @return Name of the column.
+   */
+  public String name() {
+    return name;
+  }
+
+  /**
+   * Type of column.
+   *
+   * @return Type of column.
+   */
+  public VerticaColumnType type() {
+    return type;
+  }
+
+  /**
+   * The size of the column.
+   *
+   * @return The size of the column.
+   */
+  public int size() {
+    return size;
+  }
+
+  /**
+   * The precision of the column.
+   *
+   * @return The precision of the column.
+   */
+  public int precision() {
+    return precision;
+  }
+
+  /**
+   * The scale of the column.
+   *
+   * @return The scale of the column.
+   */
+  public int scale() {
+    return scale;
+  }
+
+  VerticaColumnInfo(String name, VerticaColumnType type, int size, int precision, int scale) {
+    Preconditions.checkNotNull(name, "name cannot be null.");
+    this.name = name;
+    this.type = type;
+
+    if (VerticaColumnType.NUMERIC == type) {
+      Preconditions.checkState(precision > 0, "precision must be greater than zero.");
+      Preconditions.checkState(scale > -1, "scale must be greater than -1.");
+      this.size = numericSize(precision);
+    } else {
+      this.size = size;
+    }
+
+    this.precision = precision;
+    this.scale = scale;
+    this.calendar = Calendar.getInstance(Constants.UTC_TIMEZONE);
+  }
+
+  VerticaColumnInfo(String name, VerticaColumnType type) {
+    this(name, type, sizeForType(type), -1, -1);
+  }
+
+  VerticaColumnInfo(String name, VerticaColumnType type, int size) {
+    this(name, type, size, -1, -1);
+  }
+
+  VerticaColumnInfo(String name, VerticaColumnType type, int precision, int scale) {
+    this(name, type, numericSize(precision), precision, scale);
+  }
+
+  final static int sizeForType(VerticaColumnType type) {
+    int size;
+
+    switch (type) {
+      case BOOLEAN:
+        size = 1;
+        break;
+      case FLOAT:
+        size = 8;
+        break;
+      case DATE:
+        size = 8;
+        break;
+      case TIME:
+        size = 8;
+        break;
+      case TIMETZ:
+        size = 8;
+        break;
+      case TIMESTAMP:
+        size = 8;
+        break;
+      case TIMESTAMPTZ:
+        size = 8;
+        break;
+      case INTERVAL:
+        size = 8;
+        break;
+      case VARBINARY:
+      case VARCHAR:
+        size = -1;
+        break;
+      default:
+        throw new IllegalStateException(String.format(
+            "Size must be specified for type '%s'",
+            type
+        ));
+    }
+    return size;
+  }
+
+  void writeFloat(ByteBuffer buffer, Object value) {
+    log.trace("writeFloat() - value = {}", value);
+
+    Number number = (Number) value;
+    buffer.putDouble(number.doubleValue());
+  }
+
+  void writeBoolean(ByteBuffer buffer, Object value) {
+    log.trace("writeBoolean() - value = {}", value);
+    boolean bool = (boolean) value;
+    buffer.put(bool ? Constants.TRUE : Constants.FALSE);
+  }
+
+  void writeChar(ByteBuffer buffer, Object value) {
+    log.trace("writeChar() - value = {}", value);
+
+    ByteBuffer valueBuffer = Charsets.UTF_8.encode(value.toString());
+    Preconditions.checkState(
+        this.size >= valueBuffer.remaining(),
+        "Encoded value for '%s' is %s byte(s) but the column is only %s byte(s).",
+        this.name,
+        valueBuffer.remaining(),
+        this.size
+    );
+
+    buffer.put(valueBuffer);
+    int padding = this.size - valueBuffer.capacity();
+    log.trace("writeChar() - padding value by {} byte(s).");
+    for (int i = 0; i < padding; i++) {
+      buffer.put(Constants.FALSE);
+    }
+  }
+
+  void writeBinary(ByteBuffer buffer, Object value) {
+    log.trace("writeBinary() - value = {}", value);
+
+    byte[] valueBuffer = (byte[]) value;
+
+    Preconditions.checkState(
+        this.size >= valueBuffer.length,
+        "Encoded value for '%s' is %s byte(s) but the column is only %s byte(s).",
+        this.name,
+        valueBuffer.length,
+        this.size
+    );
+
+    buffer.put(valueBuffer);
+    int padding = this.size - valueBuffer.length;
+    log.trace("writeBinary() - padding value by {} byte(s).");
+    for (int i = 0; i < padding; i++) {
+      buffer.put(Constants.FALSE);
+    }
+  }
+
+  void writeVarchar(ByteBuffer buffer, Object value) {
+    log.trace("writeVarchar() - value = {}", value);
+    ByteBuffer valueBuffer = Charsets.UTF_8.encode(value.toString());
+    log.trace("writeVarchar() - writing {} byte(s).", valueBuffer.remaining());
+    buffer.putInt(valueBuffer.remaining());
+    buffer.put(valueBuffer);
+  }
+
+  void writeVarbinary(ByteBuffer buffer, Object value) {
+    log.trace("writeVarbinary() - value = {}", value);
+    byte[] valueBuffer = (byte[]) value;
+    log.trace("writeVarbinary() - writing {} byte(s).", valueBuffer.length);
+    buffer.putInt(valueBuffer.length);
+    buffer.put(valueBuffer);
+  }
+
+  <T> T checkedCast(Object value, Class<T> cls) {
+    try {
+      return cls.cast(value);
+    } catch (ClassCastException ex) {
+      throw new IllegalStateException(
+          String.format(
+              "Could not cast '%s' to '%s' for column '%s'.",
+              value.getClass().getName(),
+              cls.getName(),
+              this.name
+          ),
+          ex
+      );
+    }
+  }
+
+
+  void writeInteger(ByteBuffer buffer, Object value) {
+    log.trace("writeInteger() - value = {}", value);
+
+    Number number = (Number) value;
+
+    switch (this.size) {
+      case 1:
+        buffer.put(number.byteValue());
+        break;
+      case 2:
+        buffer.putShort(number.shortValue());
+        break;
+      case 4:
+        buffer.putInt(number.intValue());
+        break;
+      case 8:
+        buffer.putLong(number.longValue());
+        break;
+      default:
+        throw new UnsupportedOperationException(
+            String.format("An integer of %s bytes is not supported", this.size)
+        );
+    }
+  }
+
+  void writeDate(ByteBuffer buffer, Object value) {
+    log.trace("writeDate() - value = {}", value);
+    final long input = toDateStorage(value);
+    long storage = (input - Constants.THEIR_EPOCH) / (1000 * 60 * 60 * 24);
+    log.trace("writeDate() - storage = {}", storage);
+    buffer.putLong(storage);
+  }
+
+  void writeTimestamp(ByteBuffer buffer, Object value) {
+    log.trace("writeTimestamp() - value = {}", value);
+    final long input = toDateStorage(value);
+    long storage = (input * 1000L - Constants.THEIR_EPOCH_MICRO);
+    log.trace("writeTimestamp() - storage = {}", storage);
+    buffer.putLong(storage);
+  }
+
+  void writeTimestampTZ(ByteBuffer buffer, Object value) {
+    log.trace("writeTimestampTZ() - value = {}", value);
+    final long input = toDateStorage(value);
+    long storage = (input * 1000L - Constants.THEIR_EPOCH_MICRO);
+    log.trace("writeTimestampTZ() - storage = {}", storage);
+    buffer.putLong(storage);
+  }
+
+  void writeTime(ByteBuffer buffer, Object value) {
+    log.trace("writeTime() - value = {}", value);
+    final long input = toDateStorage(value);
+    this.calendar.setTimeInMillis(input);
+    this.calendar.set(2000, 0, 01);
+    long storage = (this.calendar.getTimeInMillis() * 1000L - Constants.THEIR_EPOCH_MICRO);
+    log.trace("writeTime() - storage = {}", storage);
+    buffer.putLong(storage);
+  }
+
+
+  void writeTimeTZ(ByteBuffer buffer, Object value) {
+    buffer.put(BaseEncoding.base16().decode("D0970180F079F010"));
+
+  }
+
+  static int numericSize(int precision) {
+    return (int) Math.ceil(((precision / 19D) + 1D) * 8D);
+  }
+
+  void writeNumeric(ByteBuffer buffer, Object value) {
+    /*
+    This method needs some love. I'm not super familiar with what is going on here but I'm getting a correct value
+    based on the document
+     */
+    log.trace("writeNumeric() - value = {}", value);
+    final BigDecimal decimal = (BigDecimal) value;
+
+    Preconditions.checkState(
+        this.scale == decimal.scale(),
+        "Scale for '%s' is mismatched. Value(%s) does not match definition of %s.",
+        decimal.scale(),
+        this.scale
+    );
+
+    final BigInteger unscaled = decimal.unscaledValue();
+    byte[] unscaledBuffer = unscaled.toByteArray();
+
+//    double b = Math.ceil(((38D / 19D) + 1D) * 8D);
+//    log.trace("writeNumeric() - bufferSize:{}", b);
+//    int bufferSize = (int) Math.ceil(((38D / 19D) + 1D) * 8D);
+    log.trace("writeNumeric() - bufferSize:{}", this.size);
+    ByteBuffer byteBuffer = ByteBuffer.allocate(this.size).order(ByteOrder.LITTLE_ENDIAN);
+    final int bufferMinusScale = this.size - 5;
+    final int paddingNeeded = bufferMinusScale - unscaledBuffer.length;
+    log.trace("writeNumeric() - Padding with {} byte(s).", paddingNeeded);
+    for (int i = 0; i < paddingNeeded; i++) {
+      byteBuffer.put(Constants.ZERO);
+    }
+    for (int i = unscaledBuffer.length - 1; i >= 0; i--) {
+      byteBuffer.put(unscaledBuffer[i]);
+    }
+    byteBuffer.put(Constants.ZERO);
+    byteBuffer.putInt(scale);
+    byteBuffer.flip();
+    buffer.put(byteBuffer);
+  }
+
+  private long toDateStorage(Object value) {
+    final long input;
+
+    if (value instanceof java.util.Date) {
+      input = ((java.util.Date) value).getTime();
+    } else if (value instanceof java.sql.Date) {
+      input = ((java.sql.Date) value).getTime();
+    } else {
+      throw new UnsupportedOperationException(
+          String.format(
+              "Type '%s' is not supported.",
+              value.getClass().getName()
+          )
+      );
+    }
+    return input;
+  }
+
+  void writeInterval(ByteBuffer buffer, Object value) {
+    Number number = (Number) value;
+    buffer.putLong(number.longValue());
+  }
+
+  void encode(ByteBuffer buffer, Object value) {
+    Preconditions.checkNotNull(buffer, "buffer cannot be null.");
+    Preconditions.checkState(ByteOrder.LITTLE_ENDIAN == buffer.order(), "buffer.order() must be LITTLE_ENDIAN.");
+    if (null == value) {
+      log.trace("encode() - Skipping due to null value.");
+      return;
+    }
+
+    Encoder encoder = this.encoders.get(this.type, value);
+    if (null == encoder) {
+      throw new UnsupportedOperationException(
+          String.format(
+              "Encoder for %s:%s was found",
+              this.type,
+              value.getClass().getName()
+          )
+      );
+    }
+    encoder.encode(buffer, value, this.name, this.size, this.scale);
+  }
+
+}
