@@ -15,6 +15,8 @@
  */
 package com.github.jcustenborder.vertica;
 
+import com.github.jcustenborder.vertica.binary.Encoder;
+import com.github.jcustenborder.vertica.binary.Encoders;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.io.BaseEncoding;
@@ -26,7 +28,6 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Calendar;
-import java.util.TimeZone;
 
 //https://my.vertica.com/docs/8.0.x/HTML/index.htm#Authoring/AdministratorsGuide/BinaryFilesAppendix/CreatingNativeBinaryFormatFiles.htm
 
@@ -34,19 +35,18 @@ import java.util.TimeZone;
  * Class is used to define a column in a Vertica table.
  */
 public class VerticaColumnInfo {
-  static final long THEIR_EPOCH = 946684800000L;
-  static final long THEIR_EPOCH_MICRO = THEIR_EPOCH * 1000L;
   private static final Logger log = LoggerFactory.getLogger(VerticaColumnInfo.class);
   final String name;
   final VerticaColumnType type;
   final int size;
   final int precision;
   final int scale;
-  final static TimeZone UTC_TIMEZONE = TimeZone.getTimeZone("UTC");
   final Calendar calendar;
+  final Encoders encoders = new Encoders();
 
   /**
    * Name of the column.
+   *
    * @return Name of the column.
    */
   public String name() {
@@ -55,6 +55,7 @@ public class VerticaColumnInfo {
 
   /**
    * Type of column.
+   *
    * @return Type of column.
    */
   public VerticaColumnType type() {
@@ -63,6 +64,7 @@ public class VerticaColumnInfo {
 
   /**
    * The size of the column.
+   *
    * @return The size of the column.
    */
   public int size() {
@@ -71,6 +73,7 @@ public class VerticaColumnInfo {
 
   /**
    * The precision of the column.
+   *
    * @return The precision of the column.
    */
   public int precision() {
@@ -79,6 +82,7 @@ public class VerticaColumnInfo {
 
   /**
    * The scale of the column.
+   *
    * @return The scale of the column.
    */
   public int scale() {
@@ -100,7 +104,7 @@ public class VerticaColumnInfo {
 
     this.precision = precision;
     this.scale = scale;
-    this.calendar = Calendar.getInstance(UTC_TIMEZONE);
+    this.calendar = Calendar.getInstance(Constants.UTC_TIMEZONE);
   }
 
   VerticaColumnInfo(String name, VerticaColumnType type) {
@@ -226,6 +230,23 @@ public class VerticaColumnInfo {
     buffer.put(valueBuffer);
   }
 
+  <T> T checkedCast(Object value, Class<T> cls) {
+    try {
+      return cls.cast(value);
+    } catch (ClassCastException ex) {
+      throw new IllegalStateException(
+          String.format(
+              "Could not cast '%s' to '%s' for column '%s'.",
+              value.getClass().getName(),
+              cls.getName(),
+              this.name
+          ),
+          ex
+      );
+    }
+  }
+
+
   void writeInteger(ByteBuffer buffer, Object value) {
     log.trace("writeInteger() - value = {}", value);
 
@@ -254,7 +275,7 @@ public class VerticaColumnInfo {
   void writeDate(ByteBuffer buffer, Object value) {
     log.trace("writeDate() - value = {}", value);
     final long input = toDateStorage(value);
-    long storage = (input - THEIR_EPOCH) / (1000 * 60 * 60 * 24);
+    long storage = (input - Constants.THEIR_EPOCH) / (1000 * 60 * 60 * 24);
     log.trace("writeDate() - storage = {}", storage);
     buffer.putLong(storage);
   }
@@ -262,7 +283,7 @@ public class VerticaColumnInfo {
   void writeTimestamp(ByteBuffer buffer, Object value) {
     log.trace("writeTimestamp() - value = {}", value);
     final long input = toDateStorage(value);
-    long storage = (input * 1000L - THEIR_EPOCH_MICRO);
+    long storage = (input * 1000L - Constants.THEIR_EPOCH_MICRO);
     log.trace("writeTimestamp() - storage = {}", storage);
     buffer.putLong(storage);
   }
@@ -270,7 +291,7 @@ public class VerticaColumnInfo {
   void writeTimestampTZ(ByteBuffer buffer, Object value) {
     log.trace("writeTimestampTZ() - value = {}", value);
     final long input = toDateStorage(value);
-    long storage = (input * 1000L - THEIR_EPOCH_MICRO);
+    long storage = (input * 1000L - Constants.THEIR_EPOCH_MICRO);
     log.trace("writeTimestampTZ() - storage = {}", storage);
     buffer.putLong(storage);
   }
@@ -280,7 +301,7 @@ public class VerticaColumnInfo {
     final long input = toDateStorage(value);
     this.calendar.setTimeInMillis(input);
     this.calendar.set(2000, 0, 01);
-    long storage = (this.calendar.getTimeInMillis() * 1000L - THEIR_EPOCH_MICRO);
+    long storage = (this.calendar.getTimeInMillis() * 1000L - Constants.THEIR_EPOCH_MICRO);
     log.trace("writeTime() - storage = {}", storage);
     buffer.putLong(storage);
   }
@@ -364,50 +385,17 @@ public class VerticaColumnInfo {
       return;
     }
 
-    switch (this.type) {
-      case INTEGER:
-        writeInteger(buffer, value);
-        break;
-      case FLOAT:
-        writeFloat(buffer, value);
-        break;
-      case BOOLEAN:
-        writeBoolean(buffer, value);
-        break;
-      case VARCHAR:
-        writeVarchar(buffer, value);
-        break;
-      case CHAR:
-        writeChar(buffer, value);
-        break;
-      case BINARY:
-        writeBinary(buffer, value);
-        break;
-      case VARBINARY:
-        writeVarbinary(buffer, value);
-        break;
-      case DATE:
-        writeDate(buffer, value);
-        break;
-      case TIMESTAMP:
-        writeTimestamp(buffer, value);
-        break;
-      case TIMESTAMPTZ:
-        writeTimestampTZ(buffer, value);
-        break;
-      case TIME:
-        writeTime(buffer, value);
-        break;
-      case TIMETZ:
-        writeTimeTZ(buffer, value);
-        break;
-      case NUMERIC:
-        writeNumeric(buffer, value);
-        break;
-      case INTERVAL:
-        writeInterval(buffer, value);
-        break;
+    Encoder encoder = this.encoders.get(this.type, value);
+    if (null == encoder) {
+      throw new UnsupportedOperationException(
+          String.format(
+              "Encoder for %s:%s was found",
+              this.type,
+              value.getClass().getName()
+          )
+      );
     }
+    encoder.encode(buffer, value, this.name, this.size, this.scale);
   }
 
 }

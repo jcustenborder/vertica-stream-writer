@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,8 @@
 package com.github.jcustenborder.vertica;
 
 import com.google.common.io.BaseEncoding;
+import jdk.nashorn.internal.ir.annotations.Ignore;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,8 +46,9 @@ public class VerticaBinaryStreamWriterTest {
     }
   }
 
+  @Disabled
   @Test
-  public void foo() throws IOException {
+  public void write() throws IOException {
     VerticaStreamWriterBuilder builder = new VerticaStreamWriterBuilder()
         .table("allTypes")
         .column("INTCOL", VerticaColumnType.INTEGER, 8)

@@ -13,22 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.jcustenborder.vertica;
+package com.github.jcustenborder.vertica.binary;
 
-import java.util.TimeZone;
+import java.util.Date;
 
-public class Constants {
-
-
-
-  private Constants() {
-
+class TimeUtilDateEncoder extends UTCTimeEncoder<Date> {
+  @Override
+  public Class<Date> inputType() {
+    return Date.class;
   }
 
-  public final static TimeZone UTC_TIMEZONE = TimeZone.getTimeZone("UTC");
-  public static final byte TRUE = (byte) 0x01;
-  public static final byte FALSE = (byte) 0x00;
-  public static final byte ZERO = FALSE;
-  public static final long THEIR_EPOCH = 946684800000L;
-  public static final long THEIR_EPOCH_MICRO = THEIR_EPOCH * 1000L;
+  @Override
+  protected long utcTime(Date input) {
+    return input.getTime();
+  }
 }

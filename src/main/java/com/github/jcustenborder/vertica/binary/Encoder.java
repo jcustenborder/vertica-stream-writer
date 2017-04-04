@@ -13,22 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.jcustenborder.vertica;
+package com.github.jcustenborder.vertica.binary;
 
-import java.util.TimeZone;
+import com.github.jcustenborder.vertica.VerticaColumnType;
 
-public class Constants {
+import java.nio.ByteBuffer;
 
+public abstract class Encoder<T> {
 
+  public abstract VerticaColumnType columnType();
 
-  private Constants() {
+  public abstract Class<T> inputType();
 
-  }
-
-  public final static TimeZone UTC_TIMEZONE = TimeZone.getTimeZone("UTC");
-  public static final byte TRUE = (byte) 0x01;
-  public static final byte FALSE = (byte) 0x00;
-  public static final byte ZERO = FALSE;
-  public static final long THEIR_EPOCH = 946684800000L;
-  public static final long THEIR_EPOCH_MICRO = THEIR_EPOCH * 1000L;
+  public abstract void encode(final ByteBuffer buffer, final T input, String name, final int size, int scale);
 }
