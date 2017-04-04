@@ -243,6 +243,11 @@ public class VerticaColumnInfoTest {
 
     ).stream().map(testCase -> dynamicTest(testCase.toString(), () -> {
       VerticaColumnInfo columnInfo = new VerticaColumnInfo("test", testCase.type, testCase.size, testCase.precision, testCase.scale);
+      assertEquals("test", columnInfo.name(), "name should match.");
+      assertEquals(testCase.type, columnInfo.type(), "type should match.");
+      assertEquals(testCase.size, columnInfo.size(), "size should match.");
+      assertEquals(testCase.precision, columnInfo.precision(), "precision should match.");
+      assertEquals(testCase.scale, columnInfo.scale(), "scale should match.");
       ByteBuffer byteBuffer = ByteBuffer.allocate(1024).order(ByteOrder.LITTLE_ENDIAN);
       columnInfo.encode(byteBuffer, testCase.input);
       byteBuffer.flip();
