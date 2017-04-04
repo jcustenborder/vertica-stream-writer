@@ -107,40 +107,4 @@ public class VerticaBinaryStreamWriterTest {
     return builder.toString();
   }
 
-  @Test
-  public void nullMarkers() {
-    Object[] input = new Object[]{
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true
-    };
-
-    BitSet bitSet = new BitSet(input.length);
-
-    for (int i = 0; i < input.length; i++) {
-      bitSet.set(i, null == input[i]);
-    }
-
-
-//    final byte[] output = VerticaBinaryStreamWriter.nullMarkers(input);
-////    byte[] output = new byte[buffer.remaining()];
-////    buffer.get(output);
-//    log.trace("output:   {}", bitString(output));
-//    log.trace("expected: {}", bitString(BaseEncoding.base16().decode("0000")));
-//
-//    final String actual = BaseEncoding.base16().encode(output);
-//    final String expected = "0000";
-//    assertEquals(expected, actual);
-  }
 }
