@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,9 +33,6 @@ public class VerticaColumnInfo {
   static final long THEIR_EPOCH = 946684800000L;
   static final long THEIR_EPOCH_MICRO = THEIR_EPOCH * 1000L;
   private static final Logger log = LoggerFactory.getLogger(VerticaColumnInfo.class);
-  private static final byte TRUE = (byte) 0x01;
-  private static final byte FALSE = (byte) 0x00;
-  private static final byte ZERO = FALSE;
   final String name;
   final VerticaType type;
   final int size;
@@ -44,16 +41,37 @@ public class VerticaColumnInfo {
   final static TimeZone UTC_TIMEZONE = TimeZone.getTimeZone("UTC");
   final Calendar calendar;
 
+  public String name() {
+    return name;
+  }
+
+  public VerticaType type() {
+    return type;
+  }
+
+  public int size() {
+    return size;
+  }
+
+  public int precision() {
+    return precision;
+  }
+
+  public int scale() {
+    return scale;
+  }
 
   public VerticaColumnInfo(String name, VerticaType type, int size, int precision, int scale) {
     Preconditions.checkNotNull(name, "name cannot be null.");
     this.name = name;
     this.type = type;
-    this.size = size;
 
     if (VerticaType.NUMERIC == type) {
       Preconditions.checkState(precision > 0, "precision must be greater than zero.");
       Preconditions.checkState(scale > -1, "scale must be greater than -1.");
+      this.size = numericSize(precision);
+    } else {
+      this.size = size;
     }
 
     this.precision = precision;
@@ -67,6 +85,10 @@ public class VerticaColumnInfo {
 
   public VerticaColumnInfo(String name, VerticaType type, int size) {
     this(name, type, size, -1, -1);
+  }
+
+  public VerticaColumnInfo(String name, VerticaType type, int precision, int scale) {
+    this(name, type, numericSize(precision), precision, scale);
   }
 
   final static int sizeForType(VerticaType type) {
@@ -120,7 +142,7 @@ public class VerticaColumnInfo {
   void writeBoolean(ByteBuffer buffer, Object value) {
     log.trace("writeBoolean() - value = {}", value);
     boolean bool = (boolean) value;
-    buffer.put(bool ? TRUE : FALSE);
+    buffer.put(bool ? Constants.TRUE : Constants.FALSE);
   }
 
   void writeChar(ByteBuffer buffer, Object value) {
@@ -139,7 +161,7 @@ public class VerticaColumnInfo {
     int padding = this.size - valueBuffer.capacity();
     log.trace("writeChar() - padding value by {} byte(s).");
     for (int i = 0; i < padding; i++) {
-      buffer.put(FALSE);
+      buffer.put(Constants.FALSE);
     }
   }
 
@@ -160,7 +182,7 @@ public class VerticaColumnInfo {
     int padding = this.size - valueBuffer.length;
     log.trace("writeBinary() - padding value by {} byte(s).");
     for (int i = 0; i < padding; i++) {
-      buffer.put(FALSE);
+      buffer.put(Constants.FALSE);
     }
   }
 
@@ -238,6 +260,11 @@ public class VerticaColumnInfo {
 
   void writeTimeTZ(ByteBuffer buffer, Object value) {
 
+
+  }
+
+  static int numericSize(int precision) {
+    return (int) Math.ceil(((precision / 19D) + 1D) * 8D);
   }
 
   void writeNumeric(ByteBuffer buffer, Object value) {
@@ -258,21 +285,21 @@ public class VerticaColumnInfo {
     final BigInteger unscaled = decimal.unscaledValue();
     byte[] unscaledBuffer = unscaled.toByteArray();
 
-    double b = Math.ceil(((38D / 19D) + 1D) * 8D);
-    log.trace("writeNumeric() - bufferSize:{}", b);
-    int bufferSize = (int) Math.ceil(((38D / 19D) + 1D) * 8D);
-    log.trace("writeNumeric() - bufferSize:{}", bufferSize);
-    ByteBuffer byteBuffer = ByteBuffer.allocate(bufferSize).order(ByteOrder.LITTLE_ENDIAN);
-    final int bufferMinusScale = bufferSize - 5;
+//    double b = Math.ceil(((38D / 19D) + 1D) * 8D);
+//    log.trace("writeNumeric() - bufferSize:{}", b);
+//    int bufferSize = (int) Math.ceil(((38D / 19D) + 1D) * 8D);
+    log.trace("writeNumeric() - bufferSize:{}", this.size);
+    ByteBuffer byteBuffer = ByteBuffer.allocate(this.size).order(ByteOrder.LITTLE_ENDIAN);
+    final int bufferMinusScale = this.size - 5;
     final int paddingNeeded = bufferMinusScale - unscaledBuffer.length;
     log.trace("writeNumeric() - Padding with {} byte(s).", paddingNeeded);
     for (int i = 0; i < paddingNeeded; i++) {
-      byteBuffer.put(ZERO);
+      byteBuffer.put(Constants.ZERO);
     }
     for (int i = unscaledBuffer.length - 1; i >= 0; i--) {
       byteBuffer.put(unscaledBuffer[i]);
     }
-    byteBuffer.put(ZERO);
+    byteBuffer.put(Constants.ZERO);
     byteBuffer.putInt(scale);
     byteBuffer.flip();
     buffer.put(byteBuffer);
@@ -301,7 +328,7 @@ public class VerticaColumnInfo {
     buffer.putLong(number.longValue());
   }
 
-  public void encode(ByteBuffer buffer, Object value) {
+  void encode(ByteBuffer buffer, Object value) {
     Preconditions.checkNotNull(buffer, "buffer cannot be null.");
     Preconditions.checkState(ByteOrder.LITTLE_ENDIAN == buffer.order(), "buffer.order() must be LITTLE_ENDIAN.");
     if (null == value) {
@@ -354,7 +381,6 @@ public class VerticaColumnInfo {
       case INTERVAL:
         writeInterval(buffer, value);
         break;
-
     }
   }
 

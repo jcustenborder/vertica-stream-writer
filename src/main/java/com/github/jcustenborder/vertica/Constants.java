@@ -15,6 +15,9 @@
  */
 package com.github.jcustenborder.vertica;
 
-public enum VerticaCompressionType {
-  NONE
+class Constants {
+
+  public static final byte TRUE = (byte) 0x01;
+  public static final byte FALSE = (byte) 0x00;
+  public static final byte ZERO = FALSE;
 }

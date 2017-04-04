@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.text.ParseException;
@@ -90,6 +89,43 @@ public class VerticaColumnInfoTest {
       assertEquals(entry.getKey().toString(), columnInfo.name, "name should match.");
       assertEquals(entry.getKey(), columnInfo.type, "type should match.");
       assertEquals((int) entry.getValue(), columnInfo.size, "size should match.");
+    }));
+  }
+
+  static class NumericSizeTestCase {
+    final int precision;
+    final int scale;
+    final int size;
+
+    NumericSizeTestCase(int precision, int scale, int size) {
+      this.precision = precision;
+      this.scale = scale;
+      this.size = size;
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("precision", this.precision)
+          .add("scale", this.scale)
+          .add("size", this.size)
+          .toString();
+    }
+  }
+
+  static NumericSizeTestCase decimal(int precision, int scale, int size) {
+    return new NumericSizeTestCase(precision, scale, size);
+  }
+
+  @TestFactory
+  public Stream<DynamicTest> numericSize() {
+    return Arrays.asList(
+        decimal(38, 0, 24)
+    ).stream().map(testCase -> dynamicTest(testCase.toString(), () -> {
+      VerticaColumnInfo columnInfo = new VerticaColumnInfo("test", VerticaType.NUMERIC, testCase.precision, testCase.scale);
+      assertEquals(testCase.size, columnInfo.size, "size does not match");
+      assertEquals(testCase.precision, columnInfo.precision, "precision does not match");
+      assertEquals(testCase.scale, columnInfo.scale, "scale does not match");
     }));
   }
 
@@ -168,7 +204,7 @@ public class VerticaColumnInfoTest {
 
   @Test
   public void foo() {
-    ByteBuffer buffer = ByteBuffer.wrap(BaseEncoding.base16().decode("D0970180F079F010")).order(ByteOrder.LITTLE_ENDIAN);
+    ByteBuffer buffer = ByteBuffer.wrap(BaseEncoding.base16().decode("00000000FFFFFFFF")).order(ByteOrder.LITTLE_ENDIAN);
     log.trace("{}", buffer.getLong());
     buffer = ByteBuffer.wrap(BaseEncoding.base16().decode("6601000000000000")).order(ByteOrder.LITTLE_ENDIAN);
     log.trace("{}", buffer.getLong());

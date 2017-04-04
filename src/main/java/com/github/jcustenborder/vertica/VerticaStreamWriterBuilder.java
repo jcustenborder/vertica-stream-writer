@@ -15,19 +15,108 @@
  */
 package com.github.jcustenborder.vertica;
 
+import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class VerticaStreamWriterBuilder {
   String schema;
   String database;
-  VerticaStreamWriterType streamWriterType;
-  VerticaCompressionType compressionType;
-  List<VerticaColumnInfo> columnInfos = new ArrayList<>();
+  String table;
+  int rowBufferSize = 1024 * 1024;
 
-  public VerticaStreamWriter build(OutputStream outputStream) {
-    return null;
+  public int rowBufferSize() {
+    return rowBufferSize;
   }
 
+  public VerticaStreamWriterBuilder rowBufferSize(int rowBufferSize) {
+    this.rowBufferSize = rowBufferSize;
+    return this;
+  }
+
+  VerticaStreamWriterType streamWriterType = VerticaStreamWriterType.BINARY;
+  VerticaCompressionType compressionType = VerticaCompressionType.NONE;
+  List<VerticaColumnInfo> columnInfos = new ArrayList<>();
+
+  public VerticaStreamWriter build(OutputStream outputStream) throws IOException {
+    VerticaStreamWriter writer;
+
+    switch (this.streamWriterType) {
+      case BINARY:
+        writer = new VerticaBinaryStreamWriter(this, outputStream);
+        break;
+      default:
+        throw new UnsupportedEncodingException(
+            String.format("Unsupported stream writer type of %s", this.streamWriterType)
+        );
+    }
+
+
+    return writer;
+  }
+
+  public VerticaStreamWriterBuilder column(String name, VerticaType type, int size) {
+    VerticaColumnInfo columnInfo = new VerticaColumnInfo(name, type, size);
+    this.columnInfos.add(columnInfo);
+    return this;
+  }
+
+  public VerticaStreamWriterBuilder column(String name, VerticaType type) {
+    VerticaColumnInfo columnInfo = new VerticaColumnInfo(name, type);
+    this.columnInfos.add(columnInfo);
+    return this;
+  }
+
+  public VerticaStreamWriterBuilder column(String name, VerticaType type, int precision, int scale) {
+    VerticaColumnInfo columnInfo = new VerticaColumnInfo(name, type, -1, precision, scale);
+    this.columnInfos.add(columnInfo);
+    return this;
+  }
+
+  public String schema() {
+    return schema;
+  }
+
+  public VerticaStreamWriterBuilder schema(String schema) {
+    this.schema = schema;
+    return this;
+  }
+
+  public String database() {
+    return database;
+  }
+
+  public VerticaStreamWriterBuilder database(String database) {
+    this.database = database;
+    return this;
+  }
+
+  public String table() {
+    return table;
+  }
+
+  public VerticaStreamWriterType streamWriterType() {
+    return streamWriterType;
+  }
+
+  public VerticaStreamWriterBuilder streamWriterType(VerticaStreamWriterType streamWriterType) {
+    this.streamWriterType = streamWriterType;
+    return this;
+  }
+
+  public VerticaCompressionType compressionType() {
+    return compressionType;
+  }
+
+  public VerticaStreamWriterBuilder compressionType(VerticaCompressionType compressionType) {
+    this.compressionType = compressionType;
+    return this;
+  }
+
+  public VerticaStreamWriterBuilder table(String table) {
+    this.table = table;
+    return this;
+  }
 }
