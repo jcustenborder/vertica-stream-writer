@@ -57,19 +57,19 @@ public class VerticaStreamWriterBuilder {
     return writer;
   }
 
-  public VerticaStreamWriterBuilder column(String name, VerticaType type, int size) {
+  public VerticaStreamWriterBuilder column(String name, VerticaColumnType type, int size) {
     VerticaColumnInfo columnInfo = new VerticaColumnInfo(name, type, size);
     this.columnInfos.add(columnInfo);
     return this;
   }
 
-  public VerticaStreamWriterBuilder column(String name, VerticaType type) {
+  public VerticaStreamWriterBuilder column(String name, VerticaColumnType type) {
     VerticaColumnInfo columnInfo = new VerticaColumnInfo(name, type);
     this.columnInfos.add(columnInfo);
     return this;
   }
 
-  public VerticaStreamWriterBuilder column(String name, VerticaType type, int precision, int scale) {
+  public VerticaStreamWriterBuilder column(String name, VerticaColumnType type, int precision, int scale) {
     VerticaColumnInfo columnInfo = new VerticaColumnInfo(name, type, -1, precision, scale);
     this.columnInfos.add(columnInfo);
     return this;

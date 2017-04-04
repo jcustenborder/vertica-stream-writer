@@ -15,7 +15,12 @@
  */
 package com.github.jcustenborder.vertica;
 
+/**
+ * Type of writer to use
+ */
 public enum VerticaStreamWriterType {
+  /**
+   * Binary writer. https://my.vertica.com/docs/8.0.x/HTML/index.htm#Authoring/AdministratorsGuide/BinaryFilesAppendix/CreatingNativeBinaryFormatFiles.htm
+   */
   BINARY,
-  TEXT
 }

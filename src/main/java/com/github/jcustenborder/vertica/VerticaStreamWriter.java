@@ -18,6 +18,15 @@ package com.github.jcustenborder.vertica;
 import java.io.Closeable;
 import java.io.IOException;
 
+/**
+ *
+ */
 public interface VerticaStreamWriter extends Closeable {
+  /**
+   * Method is used to write a row to the stream.
+   * @param row Array containing the objects for a row.
+   * @throws IOException Exception thrown where there is an issue writing to the backing stream.
+   * @exception IllegalStateException Exception thrown if the number of elements in the array do not match the number of columns defined.
+   */
   void write(Object[] row) throws IOException;
 }

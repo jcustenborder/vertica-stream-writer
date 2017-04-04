@@ -30,44 +30,67 @@ import java.util.TimeZone;
 
 //https://my.vertica.com/docs/8.0.x/HTML/index.htm#Authoring/AdministratorsGuide/BinaryFilesAppendix/CreatingNativeBinaryFormatFiles.htm
 
+/**
+ * Class is used to define a column in a Vertica table.
+ */
 public class VerticaColumnInfo {
   static final long THEIR_EPOCH = 946684800000L;
   static final long THEIR_EPOCH_MICRO = THEIR_EPOCH * 1000L;
   private static final Logger log = LoggerFactory.getLogger(VerticaColumnInfo.class);
   final String name;
-  final VerticaType type;
+  final VerticaColumnType type;
   final int size;
   final int precision;
   final int scale;
   final static TimeZone UTC_TIMEZONE = TimeZone.getTimeZone("UTC");
   final Calendar calendar;
 
+  /**
+   * Name of the column.
+   * @return Name of the column.
+   */
   public String name() {
     return name;
   }
 
-  public VerticaType type() {
+  /**
+   * Type of column.
+   * @return Type of column.
+   */
+  public VerticaColumnType type() {
     return type;
   }
 
+  /**
+   * The size of the column.
+   * @return The size of the column.
+   */
   public int size() {
     return size;
   }
 
+  /**
+   * The precision of the column.
+   * @return The precision of the column.
+   */
   public int precision() {
     return precision;
   }
 
+  /**
+   * The scale of the column.
+   * @return The scale of the column.
+   */
   public int scale() {
     return scale;
   }
 
-  public VerticaColumnInfo(String name, VerticaType type, int size, int precision, int scale) {
+  VerticaColumnInfo(String name, VerticaColumnType type, int size, int precision, int scale) {
     Preconditions.checkNotNull(name, "name cannot be null.");
     this.name = name;
     this.type = type;
 
-    if (VerticaType.NUMERIC == type) {
+    if (VerticaColumnType.NUMERIC == type) {
       Preconditions.checkState(precision > 0, "precision must be greater than zero.");
       Preconditions.checkState(scale > -1, "scale must be greater than -1.");
       this.size = numericSize(precision);
@@ -80,19 +103,19 @@ public class VerticaColumnInfo {
     this.calendar = Calendar.getInstance(UTC_TIMEZONE);
   }
 
-  public VerticaColumnInfo(String name, VerticaType type) {
+  VerticaColumnInfo(String name, VerticaColumnType type) {
     this(name, type, sizeForType(type), -1, -1);
   }
 
-  public VerticaColumnInfo(String name, VerticaType type, int size) {
+  VerticaColumnInfo(String name, VerticaColumnType type, int size) {
     this(name, type, size, -1, -1);
   }
 
-  public VerticaColumnInfo(String name, VerticaType type, int precision, int scale) {
+  VerticaColumnInfo(String name, VerticaColumnType type, int precision, int scale) {
     this(name, type, numericSize(precision), precision, scale);
   }
 
-  final static int sizeForType(VerticaType type) {
+  final static int sizeForType(VerticaColumnType type) {
     int size;
 
     switch (type) {

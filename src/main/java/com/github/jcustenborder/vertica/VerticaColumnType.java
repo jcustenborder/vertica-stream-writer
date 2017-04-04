@@ -15,7 +15,10 @@
  */
 package com.github.jcustenborder.vertica;
 
-public enum VerticaType {
+/**
+ * Vertica type for the column.
+ */
+public enum VerticaColumnType {
   INTEGER,
   BOOLEAN,
   FLOAT,

@@ -26,7 +26,6 @@ import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.BitSet;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -49,20 +48,20 @@ public class VerticaBinaryStreamWriterTest {
   public void foo() throws IOException {
     VerticaStreamWriterBuilder builder = new VerticaStreamWriterBuilder()
         .table("allTypes")
-        .column("INTCOL", VerticaType.INTEGER, 8)
-        .column("FLOATCOL", VerticaType.FLOAT)
-        .column("CHARCOL", VerticaType.CHAR, 10)
-        .column("VARCHARCOL", VerticaType.VARCHAR)
-        .column("BOOLCOL", VerticaType.BOOLEAN)
-        .column("DATECOL", VerticaType.DATE)
-        .column("TIMESTAMPCOL", VerticaType.TIMESTAMP)
-        .column("TIMESTAMPTZCOL", VerticaType.TIMESTAMPTZ)
-        .column("TIMECOL", VerticaType.TIME)
-        .column("TIMETZCOL", VerticaType.TIMETZ)
-        .column("VARBINCOL", VerticaType.VARBINARY)
-        .column("BINCOL", VerticaType.BINARY, 3)
-        .column("NUMCOL", VerticaType.NUMERIC, 38, 0)
-        .column("INTERVALCOL", VerticaType.INTERVAL);
+        .column("INTCOL", VerticaColumnType.INTEGER, 8)
+        .column("FLOATCOL", VerticaColumnType.FLOAT)
+        .column("CHARCOL", VerticaColumnType.CHAR, 10)
+        .column("VARCHARCOL", VerticaColumnType.VARCHAR)
+        .column("BOOLCOL", VerticaColumnType.BOOLEAN)
+        .column("DATECOL", VerticaColumnType.DATE)
+        .column("TIMESTAMPCOL", VerticaColumnType.TIMESTAMP)
+        .column("TIMESTAMPTZCOL", VerticaColumnType.TIMESTAMPTZ)
+        .column("TIMECOL", VerticaColumnType.TIME)
+        .column("TIMETZCOL", VerticaColumnType.TIMETZ)
+        .column("VARBINCOL", VerticaColumnType.VARBINARY)
+        .column("BINCOL", VerticaColumnType.BINARY, 3)
+        .column("NUMCOL", VerticaColumnType.NUMERIC, 38, 0)
+        .column("INTERVALCOL", VerticaColumnType.INTERVAL);
 
     Object[] row = new Object[]{
         1,

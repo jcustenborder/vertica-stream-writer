@@ -46,15 +46,15 @@ public class VerticaColumnInfoTest {
 
   @TestFactory
   public Stream<DynamicTest> staticSize() {
-    Map<VerticaType, Integer> testcases = new LinkedHashMap<>();
-    testcases.put(VerticaType.BOOLEAN, 1);
-    testcases.put(VerticaType.FLOAT, 8);
-    testcases.put(VerticaType.DATE, 8);
-    testcases.put(VerticaType.TIME, 8);
-    testcases.put(VerticaType.TIMETZ, 8);
-    testcases.put(VerticaType.TIMESTAMP, 8);
-    testcases.put(VerticaType.TIMESTAMPTZ, 8);
-    testcases.put(VerticaType.INTERVAL, 8);
+    Map<VerticaColumnType, Integer> testcases = new LinkedHashMap<>();
+    testcases.put(VerticaColumnType.BOOLEAN, 1);
+    testcases.put(VerticaColumnType.FLOAT, 8);
+    testcases.put(VerticaColumnType.DATE, 8);
+    testcases.put(VerticaColumnType.TIME, 8);
+    testcases.put(VerticaColumnType.TIMETZ, 8);
+    testcases.put(VerticaColumnType.TIMESTAMP, 8);
+    testcases.put(VerticaColumnType.TIMESTAMPTZ, 8);
+    testcases.put(VerticaColumnType.INTERVAL, 8);
 
     return testcases.entrySet().stream().map(entry -> dynamicTest(entry.getKey().toString(), () -> {
       VerticaColumnInfo columnInfo = new VerticaColumnInfo(entry.getKey().toString(), entry.getKey());
@@ -66,9 +66,9 @@ public class VerticaColumnInfoTest {
 
   @TestFactory
   public Stream<DynamicTest> variableSize() {
-    Map<VerticaType, Integer> testcases = new LinkedHashMap<>();
-    testcases.put(VerticaType.VARBINARY, 1234);
-    testcases.put(VerticaType.VARCHAR, 56442);
+    Map<VerticaColumnType, Integer> testcases = new LinkedHashMap<>();
+    testcases.put(VerticaColumnType.VARBINARY, 1234);
+    testcases.put(VerticaColumnType.VARCHAR, 56442);
 
     return testcases.entrySet().stream().map(entry -> dynamicTest(entry.getKey().toString(), () -> {
       VerticaColumnInfo columnInfo = new VerticaColumnInfo(entry.getKey().toString(), entry.getKey());
@@ -80,9 +80,9 @@ public class VerticaColumnInfoTest {
 
   @TestFactory
   public Stream<DynamicTest> userDefinedSize() {
-    Map<VerticaType, Integer> testcases = new LinkedHashMap<>();
-    testcases.put(VerticaType.CHAR, 1234);
-    testcases.put(VerticaType.BINARY, 56442);
+    Map<VerticaColumnType, Integer> testcases = new LinkedHashMap<>();
+    testcases.put(VerticaColumnType.CHAR, 1234);
+    testcases.put(VerticaColumnType.BINARY, 56442);
 
     return testcases.entrySet().stream().map(entry -> dynamicTest(entry.getKey().toString(), () -> {
       VerticaColumnInfo columnInfo = new VerticaColumnInfo(entry.getKey().toString(), entry.getKey(), entry.getValue());
@@ -122,7 +122,7 @@ public class VerticaColumnInfoTest {
     return Arrays.asList(
         decimal(38, 0, 24)
     ).stream().map(testCase -> dynamicTest(testCase.toString(), () -> {
-      VerticaColumnInfo columnInfo = new VerticaColumnInfo("test", VerticaType.NUMERIC, testCase.precision, testCase.scale);
+      VerticaColumnInfo columnInfo = new VerticaColumnInfo("test", VerticaColumnType.NUMERIC, testCase.precision, testCase.scale);
       assertEquals(testCase.size, columnInfo.size, "size does not match");
       assertEquals(testCase.precision, columnInfo.precision, "precision does not match");
       assertEquals(testCase.scale, columnInfo.scale, "scale does not match");
@@ -132,14 +132,14 @@ public class VerticaColumnInfoTest {
   static class EncodeTestCase {
 
     final int size;
-    final VerticaType type;
+    final VerticaColumnType type;
     final Object input;
     final String expectedValue;
     final int precision;
     final int scale;
 
 
-    EncodeTestCase(int size, VerticaType type, Object input, String expectedValue, int precision, int scale) {
+    EncodeTestCase(int size, VerticaColumnType type, Object input, String expectedValue, int precision, int scale) {
       this.size = size;
       this.type = type;
       this.input = input;
@@ -148,7 +148,7 @@ public class VerticaColumnInfoTest {
       this.scale = scale;
     }
 
-    EncodeTestCase(int size, VerticaType type, Object input, String expectedValue) {
+    EncodeTestCase(int size, VerticaColumnType type, Object input, String expectedValue) {
       this(size, type, input, expectedValue, -1, -1);
     }
 
@@ -165,7 +165,7 @@ public class VerticaColumnInfoTest {
 
   static EncodeTestCase of(
       int size,
-      VerticaType type,
+      VerticaColumnType type,
       Object input,
       String expectedValue) {
     return new EncodeTestCase(size, type, input, expectedValue);
@@ -173,7 +173,7 @@ public class VerticaColumnInfoTest {
 
   static EncodeTestCase of(
       int size,
-      VerticaType type,
+      VerticaColumnType type,
       Object input,
       String expectedValue,
       int precision,
@@ -181,18 +181,18 @@ public class VerticaColumnInfoTest {
     return new EncodeTestCase(size, type, input, expectedValue, precision, scale);
   }
 
-  static EncodeTestCase nulls(int size, VerticaType type) {
+  static EncodeTestCase nulls(int size, VerticaColumnType type) {
     return of(size, type, null, null);
   }
 
   @TestFactory
   public Stream<DynamicTest> encodeNulls() {
     return Arrays.asList(
-        nulls(1, VerticaType.INTEGER),
-        nulls(2, VerticaType.INTEGER),
-        nulls(4, VerticaType.INTEGER),
-        nulls(8, VerticaType.INTEGER),
-        nulls(8, VerticaType.FLOAT)
+        nulls(1, VerticaColumnType.INTEGER),
+        nulls(2, VerticaColumnType.INTEGER),
+        nulls(4, VerticaColumnType.INTEGER),
+        nulls(8, VerticaColumnType.INTEGER),
+        nulls(8, VerticaColumnType.FLOAT)
     ).stream().map(testCase -> dynamicTest(testCase.toString(), () -> {
       VerticaColumnInfo columnInfo = new VerticaColumnInfo("test", testCase.type, testCase.size);
       ByteBuffer byteBuffer = ByteBuffer.allocate(testCase.size).order(ByteOrder.LITTLE_ENDIAN);
@@ -223,23 +223,23 @@ public class VerticaColumnInfoTest {
   @TestFactory
   public Stream<DynamicTest> encode() throws ParseException {
     return Arrays.asList(
-        of(1, VerticaType.INTEGER, 1, "01"),
-        of(2, VerticaType.INTEGER, 1, "0100"),
-        of(4, VerticaType.INTEGER, 1, "01000000"),
-        of(8, VerticaType.INTEGER, 1, "0100000000000000"),
-        of(8, VerticaType.FLOAT, -1.11, "C3F5285C8FC2F1BF"),
-        of(1, VerticaType.BOOLEAN, Boolean.TRUE, "01"),
-        of(-1, VerticaType.VARCHAR, "ONE", "030000004F4E45"),
-        of(10, VerticaType.CHAR, "one       ", "6F6E6520202020202020"),
-        of(-1, VerticaType.VARBINARY, BaseEncoding.base16().decode("FFFFFFFFFFFFEF7F"), "08000000FFFFFFFFFFFFEF7F"),
-        of(12, VerticaType.BINARY, BaseEncoding.base16().decode("FFFFFFFFFFFFEF7F"), "FFFFFFFFFFFFEF7F00000000"),
-        of(8, VerticaType.DATE, new Date(915753600000L), "9AFEFFFFFFFFFFFF"),
-        of(8, VerticaType.TIMESTAMP, new Date(919739512350L), "3085B34F7EE7FFFF"),
-        of(8, VerticaType.TIMESTAMPTZ, date("yyyy-MM-dd HH:mm:ssX", "1999-01-08 07:04:37-05"), "401F3E64E8E3FFFF"),
-        of(8, VerticaType.TIME, date("HH:mm:ss", "07:09:23"), "C02E98FF05000000"),
-        of(8, VerticaType.TIMETZ, date("HH:mm:ssX", "15:12:34-05"), "D0970180F079F010"),
-        of("0000000000000000000000000000000064D6120000000000".length() / 2, VerticaType.NUMERIC, BigDecimal.valueOf(1234532), "0000000000000000000000000000000064D6120000000000", 38, 0),
-        of(8, VerticaType.INTERVAL, (Duration.ofHours(3).plusMinutes(3).plusSeconds(3).toMillis() * 1000L), "C047A38E02000000")
+        of(1, VerticaColumnType.INTEGER, 1, "01"),
+        of(2, VerticaColumnType.INTEGER, 1, "0100"),
+        of(4, VerticaColumnType.INTEGER, 1, "01000000"),
+        of(8, VerticaColumnType.INTEGER, 1, "0100000000000000"),
+        of(8, VerticaColumnType.FLOAT, -1.11, "C3F5285C8FC2F1BF"),
+        of(1, VerticaColumnType.BOOLEAN, Boolean.TRUE, "01"),
+        of(-1, VerticaColumnType.VARCHAR, "ONE", "030000004F4E45"),
+        of(10, VerticaColumnType.CHAR, "one       ", "6F6E6520202020202020"),
+        of(-1, VerticaColumnType.VARBINARY, BaseEncoding.base16().decode("FFFFFFFFFFFFEF7F"), "08000000FFFFFFFFFFFFEF7F"),
+        of(12, VerticaColumnType.BINARY, BaseEncoding.base16().decode("FFFFFFFFFFFFEF7F"), "FFFFFFFFFFFFEF7F00000000"),
+        of(8, VerticaColumnType.DATE, new Date(915753600000L), "9AFEFFFFFFFFFFFF"),
+        of(8, VerticaColumnType.TIMESTAMP, new Date(919739512350L), "3085B34F7EE7FFFF"),
+        of(8, VerticaColumnType.TIMESTAMPTZ, date("yyyy-MM-dd HH:mm:ssX", "1999-01-08 07:04:37-05"), "401F3E64E8E3FFFF"),
+        of(8, VerticaColumnType.TIME, date("HH:mm:ss", "07:09:23"), "C02E98FF05000000"),
+        of(8, VerticaColumnType.TIMETZ, date("HH:mm:ssX", "15:12:34-05"), "D0970180F079F010"),
+        of("0000000000000000000000000000000064D6120000000000".length() / 2, VerticaColumnType.NUMERIC, BigDecimal.valueOf(1234532), "0000000000000000000000000000000064D6120000000000", 38, 0),
+        of(8, VerticaColumnType.INTERVAL, (Duration.ofHours(3).plusMinutes(3).plusSeconds(3).toMillis() * 1000L), "C047A38E02000000")
 
     ).stream().map(testCase -> dynamicTest(testCase.toString(), () -> {
       VerticaColumnInfo columnInfo = new VerticaColumnInfo("test", testCase.type, testCase.size, testCase.precision, testCase.scale);
