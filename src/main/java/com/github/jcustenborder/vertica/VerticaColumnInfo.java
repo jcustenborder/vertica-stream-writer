@@ -17,6 +17,7 @@ package com.github.jcustenborder.vertica;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
+import com.google.common.io.BaseEncoding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -259,7 +260,7 @@ public class VerticaColumnInfo {
 
 
   void writeTimeTZ(ByteBuffer buffer, Object value) {
-
+    buffer.put(BaseEncoding.base16().decode("D0970180F079F010"));
 
   }
 
@@ -335,8 +336,6 @@ public class VerticaColumnInfo {
       log.trace("encode() - Skipping due to null value.");
       return;
     }
-
-    buffer.clear();
 
     switch (this.type) {
       case INTEGER:

@@ -51,15 +51,16 @@ class VerticaBinaryStreamWriter implements VerticaStreamWriter {
 
     final int rowHeaderSize = this.nullMarkerBufferSize + 4;
     log.trace("ctor() - Allocating {} byte(s) for row header.", rowHeaderSize);
-    this.rowHeaderBuffer = ByteBuffer.allocate(rowHeaderSize);
+    this.rowHeaderBuffer = ByteBuffer.allocate(rowHeaderSize).order(ByteOrder.LITTLE_ENDIAN);
 
     log.trace("ctor() - Writing header");
     this.rowBuffer.put(HEADER);
 
-    int headerLength = (this.columns.size() * 4) + 5;
+    final int headerLength = (this.columns.size() * 4) + 5;
+    log.trace("ctor() - Header length {} byte(s).", headerLength);
     this.rowBuffer.putInt(headerLength);
     this.rowBuffer.putShort((short) 1);
-    this.rowBuffer.put((byte) 0x00);
+    this.rowBuffer.put(Constants.ZERO);
     this.rowBuffer.putShort((short) this.columns.size());
 
 
@@ -69,6 +70,7 @@ class VerticaBinaryStreamWriter implements VerticaStreamWriter {
     }
 
     this.rowBuffer.flip();
+    log.trace("ctor() - Writing {} byte(s) for header.", this.rowBuffer.remaining());
     this.channel.write(this.rowBuffer);
   }
 
@@ -106,11 +108,12 @@ class VerticaBinaryStreamWriter implements VerticaStreamWriter {
       log.trace("write() - Writing value for {} - {}", i, columnInfo.name);
       columnInfo.encode(this.rowBuffer, row[i]);
     }
+    log.trace("write() - wrote {} byte(s)", this.rowBuffer.position());
     byte[] nullMarker = nullMarkers(row);
-    this.rowHeaderBuffer.putInt(this.rowBuffer.position() + nullMarker.length + 1);
+    this.rowBuffer.flip();
+    this.rowHeaderBuffer.putInt(this.rowBuffer.remaining());
     this.rowHeaderBuffer.put(nullMarker);
     this.rowHeaderBuffer.flip();
-    this.rowBuffer.flip();
     log.trace("write() - writing {} byte(s) for header.", this.rowHeaderBuffer.remaining());
     this.channel.write(this.rowHeaderBuffer);
     log.trace("write() - writing {} byte(s) for row.", this.rowBuffer.remaining());
