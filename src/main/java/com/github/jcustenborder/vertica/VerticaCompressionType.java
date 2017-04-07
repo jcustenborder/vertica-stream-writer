@@ -19,5 +19,8 @@ package com.github.jcustenborder.vertica;
  * Type of compression for the stream.
  */
 public enum VerticaCompressionType {
-  NONE
+  UNCOMPRESSED,
+  BZIP,
+  GZIP,
+  LZO
 }

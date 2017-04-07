@@ -15,26 +15,28 @@
  */
 package com.github.jcustenborder.vertica;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.BaseEncoding;
-import jdk.nashorn.internal.ir.annotations.Ignore;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.Date;
+import java.util.Map;
 import java.util.TimeZone;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class VerticaBinaryStreamWriterTest {
-  private static final Logger log = LoggerFactory.getLogger(VerticaBinaryStreamWriterTest.class);
+public class VerticaNativeStreamWriterTest {
+  private static final Logger log = LoggerFactory.getLogger(VerticaNativeStreamWriterTest.class);
 
   Date date(String format, String date) {
     SimpleDateFormat f = new SimpleDateFormat(format);
@@ -45,6 +47,41 @@ public class VerticaBinaryStreamWriterTest {
       throw new IllegalStateException("Exception thrown while parsing date", e);
     }
   }
+
+  @Test
+  public void test() throws IOException {
+    Map<String, String> input = ImmutableMap.of(
+        "email", "murray@mail.com",
+        "firstName", "Anna",
+        "middleName", "",
+        "lastName", "Murray",
+        "telephoneNumber", "168-155-392"
+    );
+
+    VerticaStreamWriterBuilder builder = new VerticaStreamWriterBuilder();
+    builder.compressionType(VerticaCompressionType.GZIP);
+    builder.table("testing");
+    Object[] row = new Object[input.entrySet().size()];
+    int i = 0;
+
+    for (Map.Entry<String, String> entry : input.entrySet()) {
+      log.trace(entry.getKey());
+      builder.column(entry.getKey(), VerticaColumnType.VARCHAR);
+      row[i] = entry.getValue();
+      i++;
+    }
+
+    log.trace(new QueryBuilder(builder).toString());
+
+    try (FileOutputStream testing = new FileOutputStream("target/testing.bin")) {
+      try (VerticaStreamWriter writer = builder.build(testing)) {
+        writer.write(row);
+      }
+    }
+
+
+  }
+
 
   @Disabled
   @Test
