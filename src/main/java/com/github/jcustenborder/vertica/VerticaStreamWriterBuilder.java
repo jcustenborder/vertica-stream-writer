@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,11 +31,25 @@ import java.util.List;
 import java.util.zip.Deflater;
 
 public class VerticaStreamWriterBuilder {
+  private static final int MIN_ROW_BUFFER = 100;
   private static final Logger log = LoggerFactory.getLogger(VerticaStreamWriterBuilder.class);
   String schema;
   String table;
   int rowBufferSize = 1024 * 1024;
+  VerticaLoadMethod loadMethod;
   Integer compressionLevel;
+  VerticaStreamWriterType streamWriterType = VerticaStreamWriterType.NATIVE;
+  VerticaCompressionType compressionType = VerticaCompressionType.UNCOMPRESSED;
+  List<VerticaColumnInfo> columnInfos = new ArrayList<>();
+
+  public VerticaLoadMethod loadMethod() {
+    return loadMethod;
+  }
+
+  public VerticaStreamWriterBuilder loadMethod(VerticaLoadMethod loadMethod) {
+    this.loadMethod = loadMethod;
+    return this;
+  }
 
   public Integer compressionLevel() {
     return compressionLevel;
@@ -50,7 +64,6 @@ public class VerticaStreamWriterBuilder {
     return rowBufferSize;
   }
 
-  static final int MIN_ROW_BUFFER = 100;
 
   public VerticaStreamWriterBuilder rowBufferSize(int rowBufferSize) {
     Preconditions.checkState(
@@ -61,15 +74,11 @@ public class VerticaStreamWriterBuilder {
     return this;
   }
 
-  VerticaStreamWriterType streamWriterType = VerticaStreamWriterType.NATIVE;
-  VerticaCompressionType compressionType = VerticaCompressionType.UNCOMPRESSED;
-  List<VerticaColumnInfo> columnInfos = new ArrayList<>();
 
   public VerticaStreamWriter build(OutputStream outputStream) throws IOException {
     Preconditions.checkNotNull(outputStream, "outputStream cannot be null.");
     Preconditions.checkNotNull(this.table, "table cannot be null or empty.");
     Preconditions.checkState(!this.table.isEmpty(), "table cannot be null or empty.");
-
 
     final OutputStream stream;
 

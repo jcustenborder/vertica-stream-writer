@@ -51,6 +51,9 @@ public class QueryBuilder {
         break;
     }
 
+    builder.append(' ');
+    builder.append(this.streamWriterBuilder.loadMethod());
+
     return builder.toString();
   }
 }
