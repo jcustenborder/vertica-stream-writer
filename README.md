@@ -1,8 +1,32 @@
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.jcustenborder/vertica-stream-writer.svg)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.github.jcustenborder%22%20AND%20a%3A%22vertica-stream-writer%22)
+
 # Introduction
 
 This library is a helper library to stream data in the [Vertica Native Binary Format](https://my.vertica.com/docs/8.0.x/HTML/index.htm#Authoring/AdministratorsGuide/BinaryFilesAppendix/CreatingNativeBinaryFormatFiles.htm).
 The goal is to use a [VerticaCopyStream](https://my.vertica.com/docs/7.1.x/HTML/Content/Authoring/ConnectingToHPVertica/ClientJDBC/UsingVerticaCopyStream.htm) to 
 import data to Vertica in the most efficient way possible. 
+
+# Dependency
+
+```xml
+<dependency>
+    <groupId>com.github.jcustenborder</groupId>
+    <artifactId>vertica-stream-writer</artifactId>
+    <version>[0.0.1.1,]</version>
+</dependency>
+```
+
+## LZO Support
+
+LZO compression support is optional due to the licensing with the upstream library. To enable it you must add the following to your pom to bring in the library.
+
+```xml
+<dependency>
+    <groupId>org.anarres.lzo</groupId>
+    <artifactId>lzo-core</artifactId>
+    <version>1.0.5</version>    
+</dependency>
+```
  
 # Example
 
