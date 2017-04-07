@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,8 +29,8 @@ import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.util.List;
 
-class VerticaBinaryStreamWriter implements VerticaStreamWriter {
-  private static final Logger log = LoggerFactory.getLogger(VerticaBinaryStreamWriter.class);
+class VerticaNativeStreamWriter implements VerticaStreamWriter {
+  private static final Logger log = LoggerFactory.getLogger(VerticaNativeStreamWriter.class);
   final OutputStream outputStream;
   final WritableByteChannel channel;
   final ByteBuffer rowBuffer;
@@ -39,7 +39,7 @@ class VerticaBinaryStreamWriter implements VerticaStreamWriter {
   final int nullMarkerBufferSize;
   static final byte[] HEADER = BaseEncoding.base16().decode("4E41544956450AFF0D0A00");
 
-  VerticaBinaryStreamWriter(VerticaStreamWriterBuilder builder, OutputStream outputStream) throws IOException {
+  VerticaNativeStreamWriter(VerticaStreamWriterBuilder builder, OutputStream outputStream) throws IOException {
     this.outputStream = outputStream;
     this.channel = Channels.newChannel(this.outputStream);
     this.columns = ImmutableList.copyOf(builder.columnInfos);
@@ -114,7 +114,7 @@ class VerticaBinaryStreamWriter implements VerticaStreamWriter {
     this.rowHeaderBuffer.putInt(this.rowBuffer.remaining());
     this.rowHeaderBuffer.put(nullMarker);
     this.rowHeaderBuffer.flip();
-    log.trace("write() - writing {} byte(s) for header.", this.rowHeaderBuffer.remaining());
+    log.trace("write() - writing {} byte(s) for row header.", this.rowHeaderBuffer.remaining());
     this.channel.write(this.rowHeaderBuffer);
     log.trace("write() - writing {} byte(s) for row.", this.rowBuffer.remaining());
     this.channel.write(this.rowBuffer);

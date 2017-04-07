@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,44 +15,125 @@
  */
 package com.github.jcustenborder.vertica;
 
+import com.google.common.base.Preconditions;
+import org.anarres.lzo.LzoOutputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipParameters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.Deflater;
 
 public class VerticaStreamWriterBuilder {
+  private static final Logger log = LoggerFactory.getLogger(VerticaStreamWriterBuilder.class);
   String schema;
-  String database;
   String table;
   int rowBufferSize = 1024 * 1024;
+  Integer compressionLevel;
+
+  public Integer compressionLevel() {
+    return compressionLevel;
+  }
+
+  public VerticaStreamWriterBuilder compressionLevel(Integer compressionLevel) {
+    this.compressionLevel = compressionLevel;
+    return this;
+  }
 
   public int rowBufferSize() {
     return rowBufferSize;
   }
 
+  static final int MIN_ROW_BUFFER = 100;
+
   public VerticaStreamWriterBuilder rowBufferSize(int rowBufferSize) {
+    Preconditions.checkState(
+        rowBufferSize > MIN_ROW_BUFFER,
+        "rowBufferSize must be greater than %s bytes.",
+        MIN_ROW_BUFFER);
     this.rowBufferSize = rowBufferSize;
     return this;
   }
 
-  VerticaStreamWriterType streamWriterType = VerticaStreamWriterType.BINARY;
-  VerticaCompressionType compressionType = VerticaCompressionType.NONE;
+  VerticaStreamWriterType streamWriterType = VerticaStreamWriterType.NATIVE;
+  VerticaCompressionType compressionType = VerticaCompressionType.UNCOMPRESSED;
   List<VerticaColumnInfo> columnInfos = new ArrayList<>();
 
   public VerticaStreamWriter build(OutputStream outputStream) throws IOException {
+    Preconditions.checkNotNull(outputStream, "outputStream cannot be null.");
+    Preconditions.checkNotNull(this.table, "table cannot be null or empty.");
+    Preconditions.checkState(!this.table.isEmpty(), "table cannot be null or empty.");
+
+
+    final OutputStream stream;
+
+    switch (this.compressionType) {
+      case BZIP:
+        if (null != this.compressionLevel) {
+          Preconditions.checkState(
+              this.compressionLevel >= BZip2CompressorOutputStream.MIN_BLOCKSIZE &&
+                  this.compressionLevel <= BZip2CompressorOutputStream.MAX_BLOCKSIZE,
+              "compressionLevel must be >= %s and <= %s. %s is invalid.",
+              BZip2CompressorOutputStream.MIN_BLOCKSIZE,
+              BZip2CompressorOutputStream.MAX_BLOCKSIZE,
+              this.compressionLevel
+          );
+          log.debug("Creating BZip2CompressorOutputStream with compressionLevel {}.", this.compressionLevel);
+          stream = new BZip2CompressorOutputStream(outputStream, this.compressionLevel);
+        } else {
+          log.debug("Creating BZip2CompressorOutputStream with default compressionLevel.");
+          stream = new BZip2CompressorOutputStream(outputStream);
+        }
+        break;
+      case GZIP:
+        if (null != this.compressionLevel) {
+          Preconditions.checkState(
+              this.compressionLevel >= Deflater.NO_COMPRESSION &&
+                  this.compressionLevel <= Deflater.BEST_COMPRESSION,
+              "compressionLevel must be >= %s and <= %s. %s is invalid.",
+              Deflater.NO_COMPRESSION,
+              Deflater.BEST_COMPRESSION,
+              this.compressionLevel
+          );
+          GzipParameters parameters = new GzipParameters();
+          parameters.setCompressionLevel(this.compressionLevel);
+          log.debug("Creating GzipCompressorOutputStream with compressionLevel {}.", this.compressionLevel);
+          stream = new GzipCompressorOutputStream(outputStream, parameters);
+        } else {
+          log.debug("Creating GzipCompressorOutputStream with default compressionLevel.");
+          stream = new GzipCompressorOutputStream(outputStream);
+        }
+        break;
+      case UNCOMPRESSED:
+        stream = outputStream;
+        break;
+      case LZO:
+        log.debug("Creating LzoOutputStream with default compressionLevel.");
+        stream = new LzoOutputStream(outputStream);
+        break;
+      default:
+        throw new UnsupportedEncodingException(
+            String.format("Unsupported compression type of %s", this.streamWriterType)
+        );
+    }
+
     VerticaStreamWriter writer;
 
     switch (this.streamWriterType) {
-      case BINARY:
-        writer = new VerticaBinaryStreamWriter(this, outputStream);
+      case NATIVE:
+        writer = new VerticaNativeStreamWriter(this, stream);
         break;
       default:
         throw new UnsupportedEncodingException(
             String.format("Unsupported stream writer type of %s", this.streamWriterType)
         );
     }
-
 
     return writer;
   }
@@ -81,15 +162,6 @@ public class VerticaStreamWriterBuilder {
 
   public VerticaStreamWriterBuilder schema(String schema) {
     this.schema = schema;
-    return this;
-  }
-
-  public String database() {
-    return database;
-  }
-
-  public VerticaStreamWriterBuilder database(String database) {
-    this.database = database;
     return this;
   }
 

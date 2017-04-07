@@ -10,7 +10,7 @@ Below is a direct example of building the example file defined in the Vertica Do
 
 ```java
 
-    VerticaStreamWriterBuilder builder = new VerticaStreamWriterBuilder()
+    VerticaStreamWriterBuilder streamWriterBuilder = new VerticaStreamWriterBuilder()
         .table("allTypes")
         .column("INTCOL", VerticaType.INTEGER, 8)
         .column("FLOATCOL", VerticaType.FLOAT)
@@ -44,12 +44,12 @@ Below is a direct example of building the example file defined in the Vertica Do
         (Duration.ofHours(3).plusMinutes(3).plusSeconds(3).toMillis() * 1000L)
     };
 
-    assertEquals(14, builder.columnInfos.size(), "column count should match.");
+    assertEquals(14, streamWriterBuilder.columnInfos.size(), "column count should match.");
 
     final String actual;
 
     try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-      try (VerticaStreamWriter streamWriter = builder.build(outputStream)) {
+      try (VerticaStreamWriter streamWriter = streamWriterBuilder.build(outputStream)) {
         streamWriter.write(row);
       }
     }
