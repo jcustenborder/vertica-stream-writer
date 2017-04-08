@@ -17,6 +17,7 @@ package com.github.jcustenborder.vertica;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.List;
 
 /**
  *
@@ -29,4 +30,10 @@ public interface VerticaStreamWriter extends Closeable {
    * @exception IllegalStateException Exception thrown if the number of elements in the array do not match the number of columns defined.
    */
   void write(Object[] row) throws IOException;
+
+  /**
+   *
+   * @return
+   */
+  List<VerticaColumnInfo> columns();
 }

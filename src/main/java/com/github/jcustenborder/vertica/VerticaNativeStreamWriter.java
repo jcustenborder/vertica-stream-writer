@@ -119,4 +119,9 @@ class VerticaNativeStreamWriter implements VerticaStreamWriter {
     log.trace("write() - writing {} byte(s) for row.", this.rowBuffer.remaining());
     this.channel.write(this.rowBuffer);
   }
+
+  @Override
+  public List<VerticaColumnInfo> columns() {
+    return this.columns;
+  }
 }
