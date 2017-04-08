@@ -43,7 +43,7 @@ class VerticaNativeStreamWriter implements VerticaStreamWriter {
     this.outputStream = outputStream;
     this.channel = Channels.newChannel(this.outputStream);
     this.columns = ImmutableList.copyOf(builder.columnInfos);
-    log.info("ctor() - Allocating row buffer of {} bytes.", builder.rowBufferSize);
+    log.trace("ctor() - Allocating row buffer of {} bytes.", builder.rowBufferSize);
     this.rowBuffer = ByteBuffer.allocate(builder.rowBufferSize);
     this.rowBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
