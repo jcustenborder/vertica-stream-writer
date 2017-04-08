@@ -20,7 +20,7 @@ import com.google.common.base.Strings;
 public class QueryBuilder {
   final VerticaStreamWriterBuilder streamWriterBuilder;
 
-  QueryBuilder(VerticaStreamWriterBuilder streamWriterBuilder) {
+  public QueryBuilder(VerticaStreamWriterBuilder streamWriterBuilder) {
     this.streamWriterBuilder = streamWriterBuilder;
   }
 
