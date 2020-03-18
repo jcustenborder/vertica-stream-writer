@@ -47,8 +47,9 @@ class NumericBigDecimalEncoder extends Encoder<BigDecimal> {
      */
     log.trace("input = {}", input);
 
+    //only accept the input if it's scale is lesser than or equal to the scale of Vertica column.
     Preconditions.checkState(
-        scale == input.scale(),
+        scale >= input.scale(),
         "Scale for '%s' is mismatched. Value(%s) does not match definition of %s.",
         input.scale(),
         scale
@@ -57,7 +58,8 @@ class NumericBigDecimalEncoder extends Encoder<BigDecimal> {
     final BigInteger unscaled = input.unscaledValue();
     byte[] unscaledBuffer = unscaled.toByteArray();
     log.trace("bufferSize:{}", size);
-    ByteBuffer byteBuffer = ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN);
+    //Allocate an extra byte to the buffer for accommodating the scale
+    ByteBuffer byteBuffer = ByteBuffer.allocate(size + 1).order(ByteOrder.LITTLE_ENDIAN);
     final int bufferMinusScale = size - 5;
     final int paddingNeeded = bufferMinusScale - unscaledBuffer.length;
     log.trace("Padding with {} byte(s).", paddingNeeded);
