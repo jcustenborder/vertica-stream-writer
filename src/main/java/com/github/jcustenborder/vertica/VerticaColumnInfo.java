@@ -157,7 +157,7 @@ public class VerticaColumnInfo {
   }
 
   static int numericSize(int precision) {
-    return (int) Math.ceil(((precision / 19D) + 1D) * 8D);
+    return (int) Math.floor(((precision / 19D) + 1D) * 8D);
   }
 
   void encode(ByteBuffer buffer, Object value) {
