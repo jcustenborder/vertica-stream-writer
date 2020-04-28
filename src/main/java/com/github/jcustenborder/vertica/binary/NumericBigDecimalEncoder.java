@@ -16,6 +16,7 @@
 package com.github.jcustenborder.vertica.binary;
 
 import com.github.jcustenborder.vertica.VerticaColumnType;
+import com.google.common.base.Preconditions;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -62,6 +63,14 @@ class NumericBigDecimalEncoder extends Encoder<BigDecimal> {
         .toBigInteger();
     byte[] unscaledBuffer = unscaled.toByteArray();
     final int bufLen = unscaledBuffer.length;
+
+    Preconditions.checkArgument(
+        bufLen <= size,
+        "Value (%s) exceed allowed numeric limit for the column (%s).",
+        input,
+        name
+    );
+
     ByteBuffer byteBuffer = ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN);
 
     // pad the input bytes
