@@ -81,7 +81,7 @@ class NumericBigDecimalEncoder extends Encoder<BigDecimal> {
     );
 
     Preconditions.checkArgument(
-        input.precision() <= precision,
+        input.precision() - input.scale() <= precision - scale,
         "Precision for column %s(%s) not within limits for value (%s(%s)).",
         name,
         precision,
