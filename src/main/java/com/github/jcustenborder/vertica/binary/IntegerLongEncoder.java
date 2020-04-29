@@ -36,7 +36,14 @@ class IntegerLongEncoder extends Encoder<Long> {
   }
 
   @Override
-  public void encode(ByteBuffer buffer, Long input, String name, int size, int scale) {
+  public void encode(
+      ByteBuffer buffer,
+      Long input,
+      String name,
+      int size,
+      int precision,
+      int scale
+  ) {
     Preconditions.checkState(size == 8, "Expected size should be 8.");
     log.trace("input = {}", input);
     buffer.putLong(input);

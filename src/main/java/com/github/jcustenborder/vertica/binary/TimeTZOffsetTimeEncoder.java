@@ -40,7 +40,14 @@ class TimeTZOffsetTimeEncoder extends Encoder<OffsetTime> {
   }
 
   @Override
-  public void encode(ByteBuffer buffer, OffsetTime input, String name, int size, int scale) {
+  public void encode(
+      ByteBuffer buffer,
+      OffsetTime input,
+      String name,
+      int size,
+      int precision,
+      int scale
+  ) {
     OffsetTime midnight = OffsetTime.of(LocalTime.MIDNIGHT, ZoneOffset.UTC);
     OffsetTime utcAdjust = input.withOffsetSameInstant(ZoneOffset.UTC);
     Duration duration = Duration.between(midnight, utcAdjust);

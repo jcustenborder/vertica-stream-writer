@@ -36,7 +36,14 @@ class IntervalDurationEncoder extends Encoder<Duration> {
   }
 
   @Override
-  public void encode(ByteBuffer buffer, Duration input, String name, int size, int scale) {
+  public void encode(
+      ByteBuffer buffer,
+      Duration input,
+      String name,
+      int size,
+      int precision,
+      int scale
+  ) {
     log.trace("input = {}", input);
     final long micros = 1000L * input.toMillis();
     buffer.putLong(micros);

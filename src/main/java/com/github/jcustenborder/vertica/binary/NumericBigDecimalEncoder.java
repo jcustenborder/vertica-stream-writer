@@ -16,6 +16,7 @@
 package com.github.jcustenborder.vertica.binary;
 
 import com.github.jcustenborder.vertica.VerticaColumnType;
+import com.google.common.base.Preconditions;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -49,7 +50,14 @@ class NumericBigDecimalEncoder extends Encoder<BigDecimal> {
     }
   }
 
-  public void encode(ByteBuffer buffer, BigDecimal input, String name, int size, int scale) {
+  public void encode(
+      ByteBuffer buffer,
+      BigDecimal input,
+      String name,
+      int size,
+      int precision,
+      int scale
+  ) {
     /*
     This method needs some love. I'm not super familiar with what is going on here but I'm getting a correct value
     based on the document
@@ -62,6 +70,15 @@ class NumericBigDecimalEncoder extends Encoder<BigDecimal> {
         .toBigInteger();
     byte[] unscaledBuffer = unscaled.toByteArray();
     final int bufLen = unscaledBuffer.length;
+
+    Preconditions.checkArgument(
+        bufLen <= size && input.precision() - input.scale() <= precision - scale,
+        "Value (%s) exceeds range of type numeric(%s,%s).",
+        name,
+        precision,
+        scale
+    );
+
     ByteBuffer byteBuffer = ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN);
 
     // pad the input bytes

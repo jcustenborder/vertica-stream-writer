@@ -36,7 +36,14 @@ class IntegerShortEncoder extends Encoder<Short> {
   }
 
   @Override
-  public void encode(ByteBuffer buffer, Short input, String name, int size, int scale) {
+  public void encode(
+      ByteBuffer buffer,
+      Short input,
+      String name,
+      int size,
+      int precision,
+      int scale
+  ) {
     Preconditions.checkState(size == 2, "Expected size should be 2.");
     log.trace("input = {}", input);
     buffer.putShort(input);

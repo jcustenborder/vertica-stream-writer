@@ -25,5 +25,12 @@ public abstract class Encoder<T> {
 
   public abstract Class<T> inputType();
 
-  public abstract void encode(final ByteBuffer buffer, final T input, String name, final int size, int scale);
+  public abstract void encode(
+      final ByteBuffer buffer,
+      final T input,
+      String name,
+      final int size,
+      final int precision,
+      int scale
+  );
 }

@@ -178,7 +178,7 @@ public class VerticaColumnInfo {
           )
       );
     }
-    encoder.encode(buffer, value, this.name, this.size, this.scale);
+    encoder.encode(buffer, value, this.name, this.size, this.precision, this.scale);
   }
 
 }
