@@ -81,14 +81,12 @@ class NumericBigDecimalEncoder extends Encoder<BigDecimal> {
     );
 
     Preconditions.checkArgument(
-        input.precision() <= precision && input.scale() <= scale,
-        "Precision, Scale for column %s(%s,%s) not within limits for value (%s(%s,%s)).",
+        input.precision() <= precision,
+        "Precision for column %s(%s) not within limits for value (%s(%s)).",
         name,
         precision,
-        scale,
         input,
-        input.precision(),
-        input.scale()
+        input.precision()
     );
 
     ByteBuffer byteBuffer = ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN);
