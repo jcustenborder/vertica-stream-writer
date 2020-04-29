@@ -73,7 +73,7 @@ class NumericBigDecimalEncoder extends Encoder<BigDecimal> {
 
     Preconditions.checkArgument(
         bufLen <= size && input.precision() - input.scale() <= precision - scale,
-        "Value (%s) exceeds range of type numeric(%s,%s)).",
+        "Value (%s) exceeds range of type numeric(%s,%s).",
         name,
         precision,
         scale
