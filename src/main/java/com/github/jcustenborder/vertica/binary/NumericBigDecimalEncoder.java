@@ -72,21 +72,11 @@ class NumericBigDecimalEncoder extends Encoder<BigDecimal> {
     final int bufLen = unscaledBuffer.length;
 
     Preconditions.checkArgument(
-        bufLen <= size,
-        "Value (%s) exceed allowed numeric limit for the column %s(%s,%s).",
-        input,
+        bufLen <= size && input.precision() - input.scale() <= precision - scale,
+        "Value (%s) exceeds range of type numeric(%s,%s)).",
         name,
         precision,
         scale
-    );
-
-    Preconditions.checkArgument(
-        input.precision() - input.scale() <= precision - scale,
-        "Precision for column %s(%s) not within limits for value (%s(%s)).",
-        name,
-        precision,
-        input,
-        input.precision()
     );
 
     ByteBuffer byteBuffer = ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN);
