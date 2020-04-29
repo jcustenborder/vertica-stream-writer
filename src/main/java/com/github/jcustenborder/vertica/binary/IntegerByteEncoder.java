@@ -36,7 +36,14 @@ class IntegerByteEncoder extends Encoder<Byte> {
   }
 
   @Override
-  public void encode(ByteBuffer buffer, Byte input, String name, int size, int scale) {
+  public void encode(
+      ByteBuffer buffer,
+      Byte input,
+      String name,
+      int size,
+      int precision,
+      int scale
+  ) {
     Preconditions.checkState(size == 1, "Expected size should be 1.");
     log.trace("input = {}", input);
     buffer.put(input);

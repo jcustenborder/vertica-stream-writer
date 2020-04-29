@@ -18,10 +18,9 @@ package com.github.jcustenborder.vertica.binary;
 import com.github.jcustenborder.vertica.Constants;
 import com.github.jcustenborder.vertica.VerticaColumnType;
 import com.google.common.base.Preconditions;
+import java.nio.ByteBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.nio.ByteBuffer;
 
 class BinaryByteArrayEncoder extends Encoder<byte[]> {
   private static final Logger log = LoggerFactory.getLogger(BinaryByteArrayEncoder.class);
@@ -37,7 +36,14 @@ class BinaryByteArrayEncoder extends Encoder<byte[]> {
   }
 
   @Override
-  public void encode(ByteBuffer buffer, byte[] input, String name, int size, int scale) {
+  public void encode(
+      ByteBuffer buffer,
+      byte[] input,
+      String name,
+      int size,
+      int precision,
+      int scale
+  ) {
     log.trace("input = {}", input);
 
     byte[] valueBuffer = (byte[]) input;

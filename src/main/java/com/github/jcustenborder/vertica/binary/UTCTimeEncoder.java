@@ -36,7 +36,14 @@ public abstract class UTCTimeEncoder<T> extends Encoder<T> {
   protected abstract long utcTime(T input);
 
   @Override
-  public void encode(ByteBuffer buffer, T input, String name, int size, int scale) {
+  public void encode(
+      ByteBuffer buffer,
+      T input,
+      String name,
+      int size,
+      int precision,
+      int scale
+  ) {
     log.trace("input = {}", input);
     final long utcTime = utcTime(input);
     this.calendar.setTimeInMillis(utcTime);

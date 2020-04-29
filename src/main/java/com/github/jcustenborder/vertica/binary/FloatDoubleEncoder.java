@@ -35,7 +35,14 @@ class FloatDoubleEncoder extends Encoder<Double> {
   }
 
   @Override
-  public void encode(ByteBuffer buffer, Double input, String name, int size, int scale) {
+  public void encode(
+      ByteBuffer buffer,
+      Double input,
+      String name,
+      int size,
+      int precision,
+      int scale
+  ) {
     log.trace("input = {}", input);
     buffer.putDouble(input);
   }

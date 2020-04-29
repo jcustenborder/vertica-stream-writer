@@ -141,8 +141,7 @@ public class EncoderTest {
         of("0000000000000000000000000000000064D6120000000000".length() / 2, VerticaColumnType.NUMERIC, BigDecimal.valueOf(1234532), "0000000000000000000000000000000064D6120000000000", 38, 0),
         of("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF9CFFFFFFFFFFFFFF".length() / 2, VerticaColumnType.NUMERIC, BigDecimal.valueOf(-1.0), "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF9CFFFFFFFFFFFFFF", 38, 2),
         of("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDD4D56E0D5FFFFFF".length() / 2, VerticaColumnType.NUMERIC, BigDecimal.valueOf(-1809198413.15), "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDD4D56E0D5FFFFFF", 38, 2),
-        of("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFD3AA2C9FBFFFFFF".length() / 2, VerticaColumnType.NUMERIC, BigDecimal.valueOf(-1809198413.15), "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFD3AA2C9FBFFFFFF", 38, 1),
-        of("06000000000000008056F30D9B9F4EB1".length() / 2, VerticaColumnType.NUMERIC, BigDecimal.valueOf(123456789123456789.123), "06000000000000008056F30D9B9F4EB1", 21, 3),
+        of("0600000000000000836AF30D9B9F4EB1".length() / 2, VerticaColumnType.NUMERIC, new BigDecimal("123456789123456789.123"), "0600000000000000836AF30D9B9F4EB1", 21, 3),
         of(8, VerticaColumnType.INTERVAL, (Duration.ofHours(3).plusMinutes(3).plusSeconds(3).toMillis() * 1000L), "C047A38E02000000"),
         of(8, VerticaColumnType.INTERVAL, Duration.ofHours(3).plusMinutes(3).plusSeconds(3), "C047A38E02000000")
 
@@ -150,7 +149,7 @@ public class EncoderTest {
       ByteBuffer byteBuffer = ByteBuffer.allocate(1024).order(ByteOrder.LITTLE_ENDIAN);
       Encoder encoder = this.encoders.get(testCase.type, testCase.input);
       assertNotNull(encoder, "Encoder was not returned.");
-      encoder.encode(byteBuffer, testCase.input, "test", testCase.size, testCase.scale);
+      encoder.encode(byteBuffer, testCase.input, "test", testCase.size, testCase.precision, testCase.scale);
 
       byteBuffer.flip();
       assertTrue(byteBuffer.hasRemaining(), "The byteBuffer should have something in it.");

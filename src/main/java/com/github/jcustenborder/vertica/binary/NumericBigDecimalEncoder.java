@@ -50,7 +50,14 @@ class NumericBigDecimalEncoder extends Encoder<BigDecimal> {
     }
   }
 
-  public void encode(ByteBuffer buffer, BigDecimal input, String name, int size, int scale) {
+  public void encode(
+      ByteBuffer buffer,
+      BigDecimal input,
+      String name,
+      int size,
+      int precision,
+      int scale
+  ) {
     /*
     This method needs some love. I'm not super familiar with what is going on here but I'm getting a correct value
     based on the document
@@ -66,9 +73,22 @@ class NumericBigDecimalEncoder extends Encoder<BigDecimal> {
 
     Preconditions.checkArgument(
         bufLen <= size,
-        "Value (%s) exceed allowed numeric limit for the column (%s).",
+        "Value (%s) exceed allowed numeric limit for the column %s(%s,%s).",
         input,
-        name
+        name,
+        precision,
+        scale
+    );
+
+    Preconditions.checkArgument(
+        input.precision() <= precision && input.scale() <= scale,
+        "Precision, Scale for column %s(%s,%s) not within limits for value (%s(%s,%s)).",
+        name,
+        precision,
+        scale,
+        input,
+        input.precision(),
+        input.scale()
     );
 
     ByteBuffer byteBuffer = ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN);

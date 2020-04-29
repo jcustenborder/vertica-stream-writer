@@ -36,7 +36,14 @@ class VarCharStringEncoder extends Encoder<String> {
   }
 
   @Override
-  public void encode(ByteBuffer buffer, String input, String name, int size, int scale) {
+  public void encode(
+      ByteBuffer buffer,
+      String input,
+      String name,
+      int size,
+      int precision,
+      int scale
+  ) {
     log.trace("input = {}", input);
     ByteBuffer valueBuffer = Charsets.UTF_8.encode(input);
     log.trace("writing {} byte(s).", valueBuffer.remaining());

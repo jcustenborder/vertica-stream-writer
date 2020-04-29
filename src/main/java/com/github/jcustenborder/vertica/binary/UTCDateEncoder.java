@@ -33,7 +33,14 @@ public abstract class UTCDateEncoder<T> extends Encoder<T> {
   protected abstract long utcTime(T input);
 
   @Override
-  public void encode(ByteBuffer buffer, T input, String name, int size, int scale) {
+  public void encode(
+      ByteBuffer buffer,
+      T input,
+      String name,
+      int size,
+      int precision,
+      int scale
+  ) {
     log.trace("input = {}", input);
     long utcTime = utcTime(input);
     long storage = (utcTime - Constants.THEIR_EPOCH) / (1000 * 60 * 60 * 24);

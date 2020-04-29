@@ -35,7 +35,14 @@ class VarBinaryByteArrayEncoder extends Encoder<byte[]> {
   }
 
   @Override
-  public void encode(ByteBuffer buffer, byte[] input, String name, int size, int scale) {
+  public void encode(
+      ByteBuffer buffer,
+      byte[] input,
+      String name,
+      int size,
+      int precision,
+      int scale
+  ) {
     log.trace("writeVarbinary() - writing {} byte(s).", input.length);
     buffer.putInt(input.length);
     buffer.put(input);

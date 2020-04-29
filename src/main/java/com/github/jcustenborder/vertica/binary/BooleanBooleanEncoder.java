@@ -17,10 +17,9 @@ package com.github.jcustenborder.vertica.binary;
 
 import com.github.jcustenborder.vertica.Constants;
 import com.github.jcustenborder.vertica.VerticaColumnType;
+import java.nio.ByteBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.nio.ByteBuffer;
 
 class BooleanBooleanEncoder extends Encoder<Boolean> {
   private static final Logger log = LoggerFactory.getLogger(BooleanBooleanEncoder.class);
@@ -36,7 +35,14 @@ class BooleanBooleanEncoder extends Encoder<Boolean> {
   }
 
   @Override
-  public void encode(ByteBuffer buffer, Boolean input, String name, int size, int scale) {
+  public void encode(
+      ByteBuffer buffer,
+      Boolean input,
+      String name,
+      int size,
+      int precision,
+      int scale
+  ) {
     log.trace("input = {}", input);
     buffer.put(input ? Constants.TRUE : Constants.FALSE);
   }

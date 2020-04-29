@@ -19,10 +19,9 @@ import com.github.jcustenborder.vertica.Constants;
 import com.github.jcustenborder.vertica.VerticaColumnType;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
+import java.nio.ByteBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.nio.ByteBuffer;
 
 class CharStringEncoder extends Encoder<String> {
   private static final Logger log = LoggerFactory.getLogger(CharStringEncoder.class);
@@ -38,7 +37,14 @@ class CharStringEncoder extends Encoder<String> {
   }
 
   @Override
-  public void encode(ByteBuffer buffer, String input, String name, int size, int scale) {
+  public void encode(
+      ByteBuffer buffer,
+      String input,
+      String name,
+      int size,
+      int precision,
+      int scale
+  ) {
     log.trace("input = {}", input);
 
     ByteBuffer valueBuffer = Charsets.UTF_8.encode(input);

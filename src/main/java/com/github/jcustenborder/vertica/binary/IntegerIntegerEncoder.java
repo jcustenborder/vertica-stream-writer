@@ -36,7 +36,14 @@ class IntegerIntegerEncoder extends Encoder<Integer> {
   }
 
   @Override
-  public void encode(ByteBuffer buffer, Integer input, String name, int size, int scale) {
+  public void encode(
+      ByteBuffer buffer,
+      Integer input,
+      String name,
+      int size,
+      int precision,
+      int scale
+  ) {
     Preconditions.checkState(size == 4, "Expected size should be 4.");
     log.trace("input = {}", input);
     buffer.putInt(input);
