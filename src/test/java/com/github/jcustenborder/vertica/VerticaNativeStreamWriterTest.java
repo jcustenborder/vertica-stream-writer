@@ -81,7 +81,7 @@ public class VerticaNativeStreamWriterTest {
   }
 
   @Test
-  public void testNullWriter() {
+  public void testNullMarkers() {
     final int ROW_COUNT = 12;
     Object[] row = new Object[ROW_COUNT];
 
