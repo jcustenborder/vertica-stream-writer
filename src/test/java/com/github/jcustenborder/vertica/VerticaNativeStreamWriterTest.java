@@ -15,13 +15,10 @@
  */
 package com.github.jcustenborder.vertica;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.BaseEncoding;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -29,11 +26,14 @@ import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class VerticaNativeStreamWriterTest {
   private static final Logger log = LoggerFactory.getLogger(VerticaNativeStreamWriterTest.class);
@@ -78,10 +78,31 @@ public class VerticaNativeStreamWriterTest {
         writer.write(row);
       }
     }
-
-
   }
 
+  @Test
+  public void testNullMarkers() {
+    final int ROW_COUNT = 12;
+    Object[] row = new Object[ROW_COUNT];
+
+    // every multiple of 3 is set to char "1", o/w it is a mere null
+    for (int i = 0; i < ROW_COUNT; i++) {
+      if (i % 3 != 0) {
+        row[i] = null;
+      } else {
+        row[i] = "1";
+      }
+    }
+
+    final byte[] nullBytes = VerticaNativeStreamWriter
+        .nullMarkers(row, ROW_COUNT / 8 + 1);
+
+    log.trace("null bytes found -> {}", Arrays.toString(nullBytes));
+
+    // should equal -> 01101101 10110000
+    assertEquals(String.valueOf(nullBytes[0]), "109");
+    assertEquals(String.valueOf(nullBytes[1]), "-80"); // == 176
+  }
 
   @Disabled
   @Test
