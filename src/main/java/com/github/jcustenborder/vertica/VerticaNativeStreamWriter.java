@@ -18,16 +18,17 @@ package com.github.jcustenborder.vertica;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.BaseEncoding;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class VerticaNativeStreamWriter implements VerticaStreamWriter {
   private static final Logger log = LoggerFactory.getLogger(VerticaNativeStreamWriter.class);
@@ -79,16 +80,17 @@ class VerticaNativeStreamWriter implements VerticaStreamWriter {
 
   }
 
-  byte[] nullMarkers(Object[] row) {
-    final byte[] buffer = new byte[this.nullMarkerBufferSize];
+  static byte[] nullMarkers(Object[] row, int size) {
+    final byte[] buffer = new byte[size];
+    log.trace("nullMarkers() - called with size {}", size);
 
     for (int i = 0; i < row.length; i++) {
       boolean isNull = null == row[i];
-      int index = (int) Math.floor((double) i / 8.0d);
-      int bitIdx = i - (index * 8);
+      log.trace("nullMarkers() - Setting bit {} to {}. bufIdx={}", i, isNull, i / 8);
       if (isNull) {
-        buffer[index] |= (1 << bitIdx);
-        log.trace("nullMarkers() - Setting bit {} to {}. index={}", i, isNull, index);
+        // order from left to right
+        // e.g. first bit from left is set to 1 if first column value is null
+        buffer[i / 8] |= (1 << 7 - i % 8);
       }
     }
 
@@ -109,7 +111,7 @@ class VerticaNativeStreamWriter implements VerticaStreamWriter {
       columnInfo.encode(this.rowBuffer, row[i]);
     }
     log.trace("write() - wrote {} byte(s)", this.rowBuffer.position());
-    byte[] nullMarker = nullMarkers(row);
+    byte[] nullMarker = nullMarkers(row, this.nullMarkerBufferSize);
     this.rowBuffer.flip();
     this.rowHeaderBuffer.putInt(this.rowBuffer.remaining());
     this.rowHeaderBuffer.put(nullMarker);
